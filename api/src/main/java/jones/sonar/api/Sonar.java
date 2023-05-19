@@ -16,8 +16,8 @@
 
 package jones.sonar.api;
 
-import jones.sonar.SonarPlugin;
+import jones.sonar.api.fallback.Fallback;
 
 public interface Sonar {
-    SonarPlugin<?> getPlugin();
+    Fallback getFallback();
 }
