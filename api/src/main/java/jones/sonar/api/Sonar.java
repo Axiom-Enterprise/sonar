@@ -16,5 +16,8 @@
 
 package jones.sonar.api;
 
+import jones.sonar.SonarPlugin;
+
 public interface Sonar {
+    SonarPlugin<?> getPlugin();
 }
