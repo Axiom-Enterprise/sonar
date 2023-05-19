@@ -23,7 +23,7 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import jones.sonar.common.command.CommandHelper;
 import jones.sonar.common.command.CommandInvocation;
-import jones.sonar.common.command.CommandSender;
+import jones.sonar.common.command.InvocationSender;
 import jones.sonar.common.command.subcommand.SubCommand;
 import jones.sonar.common.command.subcommand.SubCommandManager;
 import net.kyori.adventure.text.Component;
@@ -64,7 +64,7 @@ public final class SonarCommand implements SimpleCommand {
 
         var subCommand = Optional.<SubCommand>empty();
 
-        final CommandSender sender = message -> invocation.source().sendMessage(Component.text(message));
+        final InvocationSender invocationSender = message -> invocation.source().sendMessage(Component.text(message));
 
         if (invocation.arguments().length > 0) {
             subCommand = SubCommandManager.getSubCommands().stream()
@@ -73,10 +73,6 @@ public final class SonarCommand implements SimpleCommand {
                             && Arrays.stream(sub.getInfo().aliases())
                             .anyMatch(alias -> alias.equalsIgnoreCase(invocation.arguments()[0]))))
                     .findFirst();
-
-            if (subCommand.isEmpty()) {
-                sender.sendMessage("§cThis subcommand could not be found.");
-            }
         }
 
         subCommand.ifPresentOrElse(sub -> {
@@ -86,13 +82,13 @@ public final class SonarCommand implements SimpleCommand {
             }
 
             final CommandInvocation commandInvocation = new CommandInvocation(
-                    sender,
+                    invocationSender,
                     sub,
                     invocation.arguments()
             );
 
             sub.execute(commandInvocation);
-        }, () -> CommandHelper.printHelp(sender));
+        }, () -> CommandHelper.printHelp(invocationSender));
     }
 
     @Override
