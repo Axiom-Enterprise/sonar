@@ -16,10 +16,10 @@
 
 package jones.sonar;
 
-public interface SonarPlugin {
+public interface SonarPlugin<T> {
     SonarPlatform getPlatform();
 
-    <T> void enable(final T plugin);
+    void enable(final T plugin);
 
     void disable();
 }
