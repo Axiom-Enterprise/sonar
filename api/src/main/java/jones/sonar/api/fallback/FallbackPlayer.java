@@ -32,6 +32,8 @@ public interface FallbackPlayer {
 
     String getName();
 
+    boolean needsCheck();
+
     int getProtocolVersion();
 
     int getPing();
