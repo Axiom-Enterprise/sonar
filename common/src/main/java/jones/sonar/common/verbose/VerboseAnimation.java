@@ -16,14 +16,15 @@
 
 package jones.sonar.common.verbose;
 
+import jones.sonar.api.Sonar;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class VerboseAnimation {
-    private final String[] states = {"▙", "▛", "▜", "▟"};
     private int stateIndex = 0;
 
     public String nextState() {
-        return states[++stateIndex % states.length];
+        final int nextIndex = ++stateIndex % Sonar.get().getConfig().ANIMATION.size();
+        return String.valueOf(Sonar.get().getConfig().ANIMATION.toArray()[nextIndex]);
     }
 }
