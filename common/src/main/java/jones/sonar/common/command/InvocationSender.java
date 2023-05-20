@@ -16,7 +16,8 @@
 
 package jones.sonar.common.command;
 
-@FunctionalInterface
-public interface InvocationSender {
+public interface InvocationSender<T> {
     void sendMessage(final String message);
+
+    T getPlayer();
 }
