@@ -25,4 +25,8 @@ public interface Fallback {
     Collection<InetAddress> getVerified();
 
     FallbackQueue getQueue();
+
+    FallbackFilter getFilter();
+
+    void setFilter(final FallbackFilter filter);
 }
