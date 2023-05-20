@@ -29,4 +29,8 @@ public interface Fallback {
     FallbackFilter getFilter();
 
     void setFilter(final FallbackFilter filter);
+
+    FallbackCleaner getCleaner();
+
+    void setCleaner(final FallbackCleaner filter);
 }
