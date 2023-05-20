@@ -18,6 +18,7 @@ package jones.sonar.velocity.verbose;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import jones.sonar.api.verbose.Verbose;
+import jones.sonar.common.verbose.VerboseAnimation;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
@@ -31,15 +32,8 @@ public final class ActionBarVerbose implements Verbose {
     @Getter
     private final Collection<String> subscribers = new ArrayList<>();
 
-    private static final String[] states = {"▙", "▛", "▜", "▟"};
-    private static int stateIndex = 0;
-
-    private static String nextState() {
-        return states[++stateIndex % states.length];
-    }
-
     public void update() {
-        final Component component = Component.text("§e§lSonar §7> §f" + nextState());
+        final Component component = Component.text("§e§lSonar §7> §f" + VerboseAnimation.nextState());
 
         for (final String subscriber : subscribers) {
             server.getPlayer(subscriber).ifPresent(player -> {
