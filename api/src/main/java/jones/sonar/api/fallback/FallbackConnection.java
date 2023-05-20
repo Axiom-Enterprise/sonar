@@ -21,12 +21,15 @@ import io.netty.channel.ChannelPipeline;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.net.InetAddress;
+
 @Getter
 @RequiredArgsConstructor
 public final class FallbackConnection {
     private final String username;
     private final Channel channel;
     private final ChannelPipeline pipeline;
+    private final InetAddress inetAddress;
     private final int protocolVersion;
     private final long loginTimestamp = System.currentTimeMillis();
 }
