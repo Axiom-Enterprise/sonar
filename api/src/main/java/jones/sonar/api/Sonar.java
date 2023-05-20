@@ -16,12 +16,15 @@
 
 package jones.sonar.api;
 
+import jones.sonar.api.config.SonarConfiguration;
 import jones.sonar.api.fallback.Fallback;
 import jones.sonar.api.fallback.FallbackHolder;
 import jones.sonar.api.verbose.Verbose;
 
 public interface Sonar {
     SonarPlatform getPlatform();
+
+    SonarConfiguration getConfig();
 
     default Fallback getFallback() {
         return FallbackHolder.INSTANCE;
