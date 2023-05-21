@@ -21,6 +21,7 @@ import jones.sonar.api.config.SonarConfiguration;
 import jones.sonar.api.fallback.Fallback;
 import jones.sonar.api.fallback.FallbackHolder;
 import jones.sonar.api.logger.Logger;
+import jones.sonar.api.statistics.Statistics;
 import jones.sonar.api.verbose.Verbose;
 
 public interface Sonar {
@@ -35,6 +36,8 @@ public interface Sonar {
   Verbose getActionBarVerbose();
 
   Logger getLogger();
+
+  Statistics getStatistics();
 
   static Sonar get() {
     return SonarProvider.get();
