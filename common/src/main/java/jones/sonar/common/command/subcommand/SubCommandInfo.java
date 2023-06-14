@@ -17,6 +17,8 @@
 
 package jones.sonar.common.command.subcommand;
 
+import jones.sonar.common.command.subcommand.argument.Argument;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,6 +32,8 @@ public @interface SubCommandInfo {
   String description();
 
   String[] aliases() default {};
+
+  Argument[] arguments() default {};
 
   boolean onlyPlayers() default false;
 }
