@@ -35,6 +35,8 @@ class StatisticsCommand : SubCommand() {
     val blacklisted = sonar.fallback.blacklisted.size
 
     invocation.invocationSender.sendMessage()
+    invocation.invocationSender.sendMessage(" §eStatistics (this session)")
+    invocation.invocationSender.sendMessage()
     invocation.invocationSender.sendMessage(" §a▪ §7Verified IP addresses: §f${sonar.formatter.format(verified)}")
     invocation.invocationSender.sendMessage(" §a▪ §7Verifying IP addresses: §f${sonar.formatter.format(verifying)}")
     invocation.invocationSender.sendMessage(
