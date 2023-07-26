@@ -21,24 +21,26 @@ import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.common.fallback.protocol.FallbackPacket;
 import xyz.jonesdev.sonar.common.fallback.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.ProtocolUtil;
 
 @Getter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class Disconnect implements FallbackPacket {
   private @Nullable String reason;
 
   @Override
-  public void decode(final ByteBuf byteBuf, final ProtocolVersion version) {
-    reason = ProtocolUtil.readString(byteBuf, Short.MAX_VALUE, false);
+  public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
+    reason = ProtocolUtil.readString(byteBuf);
   }
 
   @Override
-  public void encode(final ByteBuf byteBuf, final ProtocolVersion version) {
+  public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     if (reason == null) {
       throw new IllegalStateException("No reason specified");
     }
