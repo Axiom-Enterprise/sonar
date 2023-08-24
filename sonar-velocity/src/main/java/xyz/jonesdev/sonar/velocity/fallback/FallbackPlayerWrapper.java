@@ -45,7 +45,7 @@ public final class FallbackPlayerWrapper implements FallbackPlayer<ConnectedPlay
   private final ProtocolVersion protocolVersion;
 
   @Override
-  public void disconnect(@NotNull final String reason) {
+  public void disconnect(final @NotNull String reason) {
     final String serialized = ProtocolUtils.getJsonChatSerializer(connection.getProtocolVersion())
       .serialize(Component.text(reason));
     connection.closeWith(Disconnect.create(serialized));
