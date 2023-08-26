@@ -27,7 +27,9 @@ public class SonarSupplier {
   private Sonar sonar;
 
   public void set(final @NotNull Sonar s) {
-    assert sonar == null;
+    if (sonar != null) {
+      throw new AlreadyInitializedException();
+    }
     sonar = Objects.requireNonNull(s);
   }
 
