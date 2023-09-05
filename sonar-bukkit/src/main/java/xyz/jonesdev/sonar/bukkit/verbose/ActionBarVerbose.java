@@ -17,66 +17,18 @@
 
 package xyz.jonesdev.sonar.bukkit.verbose;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
-import xyz.jonesdev.sonar.api.Sonar;
-import xyz.jonesdev.sonar.api.profiler.JVMProfiler;
-import xyz.jonesdev.sonar.api.statistics.Statistics;
-import xyz.jonesdev.sonar.api.timer.SystemTimer;
 import xyz.jonesdev.sonar.api.verbose.Verbose;
-import xyz.jonesdev.sonar.common.fallback.traffic.TrafficCounter;
-import xyz.jonesdev.sonar.common.verbose.VerboseAnimation;
-
-import java.util.Collection;
-import java.util.Vector;
 
 @RequiredArgsConstructor
-public final class ActionBarVerbose implements Verbose, JVMProfiler {
+public final class ActionBarVerbose extends Verbose {
   private final Server server;
-  @Getter
-  private final Collection<String> subscribers = new Vector<>(1);
-  private final SystemTimer timer = new SystemTimer();
-  private int joinsPerSecond, lastTotalJoins;
 
-  public void update() {
-    // Clean up blacklisted IPs
-    Sonar.get().getFallback().getBlacklisted().cleanUp(false);
-
-    final int totalJoins = Statistics.TOTAL_TRAFFIC.get();
-
-    // Statistically determine the joins per second without any caches
-    if (totalJoins > 0 && timer.delay() >= 1000L) {
-      timer.reset();
-      joinsPerSecond = totalJoins - lastTotalJoins;
-      lastTotalJoins = totalJoins;
-    }
-
-    final TextComponent component = new TextComponent(
-      Sonar.get().getConfig().ACTION_BAR_LAYOUT
-        .replace("%queued%",
-          Sonar.DECIMAL_FORMAT.format(Sonar.get().getFallback().getQueue().getQueuedPlayers().size()))
-        .replace("%verifying%", Sonar.DECIMAL_FORMAT.format(Sonar.get().getFallback().getConnected().size()))
-        .replace("%blacklisted%",
-          Sonar.DECIMAL_FORMAT.format(Sonar.get().getFallback().getBlacklisted().estimatedSize()))
-        .replace("%total-joins%", Sonar.DECIMAL_FORMAT.format(totalJoins))
-        .replace("%per-second-joins%", Sonar.DECIMAL_FORMAT.format(joinsPerSecond))
-        .replace("%verify-total%", Sonar.DECIMAL_FORMAT.format(Statistics.REAL_TRAFFIC.get()))
-        .replace("%verify-success%",
-          Sonar.DECIMAL_FORMAT.format(Sonar.get().getVerifiedPlayerController().estimatedSize()))
-        .replace("%verify-failed%", Sonar.DECIMAL_FORMAT.format(Statistics.FAILED_VERIFICATIONS.get()))
-        .replace("%incoming-traffic%", TrafficCounter.INCOMING.getCachedSecond())
-        .replace("%outgoing-traffic%", TrafficCounter.OUTGOING.getCachedSecond())
-        .replace("%incoming-traffic-ttl%", TrafficCounter.INCOMING.getCachedTtl())
-        .replace("%outgoing-traffic-ttl%", TrafficCounter.OUTGOING.getCachedTtl())
-        .replace("%used-memory%", formatMemory(getUsedMemory()))
-        .replace("%free-memory%", formatMemory(getFreeMemory()))
-        .replace("%total-memory%", formatMemory(getTotalMemory()))
-        .replace("%max-memory%", formatMemory(getMaxMemory()))
-        .replace("%animation%", VerboseAnimation.nextAnimation())
-    );
+  public void broadcast(final String message) {
+    final TextComponent component = new TextComponent(message);
 
     synchronized (subscribers) {
       for (final String subscriber : subscribers) {

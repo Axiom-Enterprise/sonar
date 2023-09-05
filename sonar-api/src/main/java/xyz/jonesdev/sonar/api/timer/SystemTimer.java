@@ -31,6 +31,10 @@ public final class SystemTimer {
     return System.currentTimeMillis() - start;
   }
 
+  public boolean elapsed(final long amount) {
+    return delay() >= amount;
+  }
+
   public String formattedDelay() {
     return String.format("%.3f", delay() / 1000D);
   }
