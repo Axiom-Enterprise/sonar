@@ -30,7 +30,6 @@ import xyz.jonesdev.sonar.common.fallback.protocol.FallbackPacket;
 
 import java.util.Objects;
 
-import static xyz.jonesdev.sonar.common.utility.protocol.ProtocolUtil.readString;
 import static xyz.jonesdev.sonar.common.utility.protocol.ProtocolUtil.writeString;
 
 @Getter
@@ -41,13 +40,13 @@ public final class Disconnect implements FallbackPacket {
   private @Nullable String reason;
 
   @Override
-  public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
-    reason = readString(byteBuf);
+  public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
+    writeString(byteBuf, Objects.requireNonNull(reason));
   }
 
   @Override
-  public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
-    writeString(byteBuf, Objects.requireNonNull(reason));
+  public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
+    throw new UnsupportedOperationException();
   }
 
   public static Disconnect create(final Component component) {
