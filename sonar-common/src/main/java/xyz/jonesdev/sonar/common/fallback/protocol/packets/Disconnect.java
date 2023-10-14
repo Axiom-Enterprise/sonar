@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.fallback.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.fallback.protocol.FallbackPacket;
@@ -49,7 +50,7 @@ public final class Disconnect implements FallbackPacket {
     throw new UnsupportedOperationException();
   }
 
-  public static Disconnect create(final Component component) {
+  public static @NotNull Disconnect create(final Component component) {
     return new Disconnect(JSONComponentSerializer.json().serialize(component));
   }
 }
