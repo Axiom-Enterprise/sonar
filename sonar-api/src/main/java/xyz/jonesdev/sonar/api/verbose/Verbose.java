@@ -31,18 +31,15 @@ import xyz.jonesdev.sonar.api.statistics.Statistics;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static xyz.jonesdev.sonar.api.Sonar.DECIMAL_FORMAT;
 import static xyz.jonesdev.sonar.api.fallback.traffic.TrafficCounter.INCOMING;
 import static xyz.jonesdev.sonar.api.fallback.traffic.TrafficCounter.OUTGOING;
 
 @Getter
-public final class Verbose implements JVMProfiler, Counters {
+public final class Verbose implements Observable, JVMProfiler, Counters {
   private final @NotNull Collection<String> subscribers = new Vector<>(0);
-  private final @NotNull Map<String, Audience> audiences = new ConcurrentHashMap<>();
   private int animationIndex;
 
   // Run action bar verbose
@@ -59,7 +56,7 @@ public final class Verbose implements JVMProfiler, Counters {
     final Component component = prepareActionBarFormat();
     // Send the action bar to all online players
     for (final String subscriber : subscribers) {
-      final Audience audience = audiences.get(subscriber);
+      final Audience audience = Sonar.AUDIENCES.get(subscriber);
       if (audience == null) continue;
       audience.sendActionBar(component);
     }
@@ -99,27 +96,5 @@ public final class Verbose implements JVMProfiler, Counters {
     val animations = Sonar.get().getConfig().getVerbose().getAnimation();
     final int nextIndex = ++animationIndex % animations.size();
     return animations.toArray(new String[0])[nextIndex];
-  }
-
-  /**
-   * @param name Name of the audience
-   * @return Whether the audience is subscribed or not
-   */
-  public boolean isSubscribed(final @NotNull String name) {
-    return subscribers.contains(name);
-  }
-
-  /**
-   * @param name Name of the audience to subscribe
-   */
-  public void subscribe(final String name) {
-    subscribers.add(name);
-  }
-
-  /**
-   * @param name Name of the audience to unsubscribe
-   */
-  public void unsubscribe(final String name) {
-    subscribers.remove(name);
   }
 }
