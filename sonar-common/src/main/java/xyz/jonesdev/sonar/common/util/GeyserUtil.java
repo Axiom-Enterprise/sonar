@@ -24,9 +24,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
 
-/**
- * Simple utility to determine if someone joins using GeyserMC
- */
 @UtilityClass
 public class GeyserUtil {
   // https://github.com/GeyserMC/Floodgate/blob/master/core/src/main/java/org/geysermc/floodgate/module/CommonModule.java#L206
