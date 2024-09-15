@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.fallback.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.fallback.protocol.FallbackPacket;
 
+import static xyz.jonesdev.sonar.api.fallback.protocol.ProtocolVersion.MINECRAFT_1_8;
+
 @Getter
 @ToString
 @NoArgsConstructor
@@ -43,7 +45,8 @@ public final class PlayerInputPacket implements FallbackPacket {
   public void decode(final @NotNull ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) throws Exception {
     sideways = byteBuf.readFloat();
     forward = byteBuf.readFloat();
-    if (protocolVersion.compareTo(ProtocolVersion.MINECRAFT_1_8) < 0) {
+
+    if (protocolVersion.compareTo(MINECRAFT_1_8) < 0) {
       jump = byteBuf.readBoolean();
       unmount = byteBuf.readBoolean();
     } else {
