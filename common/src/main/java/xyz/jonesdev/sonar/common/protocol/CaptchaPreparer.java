@@ -34,8 +34,8 @@ public class CaptchaPreparer {
   private final ExecutorService PREPARATION_SERVICE = Executors.newSingleThreadExecutor();
   private final Random RANDOM = new Random();
 
-  private MapCaptchaInfo[] cached;
-  private int preparedAmount;
+  private volatile MapCaptchaInfo[] cached;
+  private volatile int preparedAmount;
 
   public void prepare() {
     // Make sure we're not preparing when Sonar is already preparing answers
@@ -56,15 +56,17 @@ public class CaptchaPreparer {
 
     // Prepare everything asynchronously
     PREPARATION_SERVICE.execute(() -> {
-      for (preparedAmount = 0; preparedAmount < precomputeAmount;) {
+      for (int i = 0; i < precomputeAmount; i++) {
         // Generate CAPTCHA
         final char[] answer = new char[3 + RANDOM.nextInt(2)];
         for (int j = 0; j < answer.length; j++) {
           answer[j] = alphabet[RANDOM.nextInt(alphabet.length)];
         }
         final BufferedImage image = Sonar.get0().getAntiBot().getCaptchaGenerator().createImage(answer);
-        // Convert and cache converted Minecraft map bytes
-        cached[preparedAmount++] = new MapCaptchaInfo(new String(answer), MapColorPalette.imageToBuffer(image));
+        // Write array slot before volatile increment so Netty I/O threads see the fully-constructed
+        // MapCaptchaInfo when they observe preparedAmount > i (JSR-133 volatile write flush).
+        cached[i] = new MapCaptchaInfo(new String(answer), MapColorPalette.imageToBuffer(image));
+        preparedAmount = i + 1;
       }
 
       Sonar.get0().getLogger().info("Finished preparing {} CAPTCHA answers ({}s)!", preparedAmount, timer);
