@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
+import xyz.jonesdev.sonar.common.protocol.SonarPacketSnapshot;
 import xyz.jonesdev.sonar.common.protocol.packets.play.MapDataPacket;
 
 @Getter
@@ -41,11 +42,11 @@ public final class MapCaptchaInfo {
     }
     this.legacy = new SonarPacket[grid.length];
     for (int i = 0; i < grid.length; i++) {
-      this.legacy[i] = new MapDataPacket(grid[i], i, 0, 0, true);
+      this.legacy[i] = new SonarPacketSnapshot(new MapDataPacket(grid[i], i, 0, 0, true));
     }
 
     // Prepare 1.8+ map data
-    this.modern = new MapDataPacket(buffer, 0, 0, 0, true);
+    this.modern = new SonarPacketSnapshot(new MapDataPacket(buffer, 0, 0, 0, true));
   }
 
   public void delayedWrite(final @NotNull SonarUser user) {
