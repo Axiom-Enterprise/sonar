@@ -113,10 +113,8 @@ public abstract class VerificationHandler implements SonarPacketListener {
     // Use a label, so we can easily add more code beneath this method in the future
     blacklist: {
       final String hostAddress = user.getInetAddress().getHostAddress();
-      final int score = Sonar.get0().getAntiBot().getBlacklist().get(hostAddress, __ -> 0);
-      final int newScore = score + 1;
-
-      Sonar.get0().getAntiBot().getBlacklist().put(hostAddress, newScore);
+      final int newScore = Sonar.get0().getAntiBot().getBlacklist().asMap()
+        .merge(hostAddress, 1, Integer::sum);
 
       // The user is allowed to disable the blacklist entirely by setting the threshold to 0
       final int limit = Sonar.get0().getConfig().getVerification().getBlacklistThreshold();

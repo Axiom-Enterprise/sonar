@@ -70,12 +70,7 @@ public final class ProtocolHandler extends VerificationHandler {
       } else if (waitingSlotConfirm) {
         waitingSlotConfirm = false;
         expectedSlotId = -1;
-        // The player did not send duplicate packets, so they pass this check
-        if (user.isGeyser()) {
-          markSuccess();
-        } else {
-          sendArmAnimation();
-        }
+        sendArmAnimation();
       } else {
         sendSetHeldItem();
       }
