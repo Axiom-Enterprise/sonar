@@ -40,6 +40,7 @@ public final class CaffeineCacheRatelimiter implements Ratelimiter<InetAddress> 
     this.expiringCache = Caffeine.newBuilder()
       .ticker(Ticker.systemTicker())
       .expireAfterWrite(duration)
+      .maximumSize(500_000L)
       .build();
   }
 

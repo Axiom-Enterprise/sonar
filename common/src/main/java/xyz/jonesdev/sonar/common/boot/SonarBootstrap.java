@@ -154,6 +154,7 @@ public abstract class SonarBootstrap<T> implements Sonar {
       getAntiBot().setBlacklist(Caffeine.newBuilder()
         .expireAfterWrite(Duration.ofMillis(getConfig().getVerification().getBlacklistTime()))
         .ticker(Ticker.systemTicker())
+        .maximumSize(1_000_000L)
         .build());
       // Store the new blacklist time, so we don't have to reset the blacklist every reload
       getAntiBot().setBlacklistTime(blacklistTime);
