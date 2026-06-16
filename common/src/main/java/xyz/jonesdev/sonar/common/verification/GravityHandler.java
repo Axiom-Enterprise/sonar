@@ -163,8 +163,8 @@ public final class GravityHandler extends VerificationHandler {
       lastPositionPacket = null;
       if (!expectClientTick) {
         // Is it impossible for the client to not move during the gravity check?
-        if (++tickWithoutMove >= 20) {
-          //failOrShowCaptcha("expected position but got client tick end.");
+        if (++tickWithoutMove >= 40) {
+          failOrShowCaptcha("expected position but got client tick end.");
         }
       } else {
         tickWithoutMove = 0;

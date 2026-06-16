@@ -45,7 +45,7 @@ public abstract class VerificationHandler implements SonarPacketListener {
   protected static final Random RANDOM = new Random();
 
   protected final void finishVerification() {
-    GlobalSonarStatistics.totalSuccessfulVerifications++;
+    GlobalSonarStatistics.totalSuccessfulVerifications.incrementAndGet();
 
     // Add verified player to the database
     Sonar.get0().getVerifiedPlayerController().add(new VerifiedPlayer(
@@ -91,7 +91,7 @@ public abstract class VerificationHandler implements SonarPacketListener {
   }
 
   protected final void fail(final @NotNull String reason) {
-    GlobalSonarStatistics.totalFailedVerifications++;
+    GlobalSonarStatistics.totalFailedVerifications.incrementAndGet();
 
     user.disconnect(Sonar.get0().getConfig().getVerification().getVerificationFailed());
 
@@ -123,7 +123,7 @@ public abstract class VerificationHandler implements SonarPacketListener {
       // The player hasn't been blacklisted yet, so skip this iteration
       if (newScore < limit) break blacklist;
 
-      GlobalSonarStatistics.totalBlacklistedPlayers++;
+      GlobalSonarStatistics.totalBlacklistedPlayers.incrementAndGet();
 
       // Call the BotBlacklistedEvent for external API usage
       Sonar.get0().getEventManager().publish(new UserBlacklistedEvent(user));

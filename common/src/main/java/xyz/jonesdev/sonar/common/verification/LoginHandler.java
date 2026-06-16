@@ -103,8 +103,11 @@ public final class LoginHandler extends VerificationHandler {
       final ClientInformationPacket clientInformation = (ClientInformationPacket) packet;
 
       if (!user.isGeyser()) {
-        checkState(clientInformation.getViewDistance() >= 2,
-          "view distance: " + clientInformation.getViewDistance());
+        final int viewDistance = clientInformation.getViewDistance();
+        checkState(viewDistance >= 2, "view distance: " + viewDistance);
+        if (viewDistance < 5) {
+          user.setForceCaptcha(true);
+        }
       }
 
       receivedClientInfo = true;

@@ -27,6 +27,7 @@ import xyz.jonesdev.sonar.api.statistics.SonarStatistics;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class GlobalSonarStatistics implements SonarStatistics {
   private static final Cache<Integer, Byte> LOGINS_PER_SECOND = Caffeine.newBuilder()
@@ -53,21 +54,21 @@ public final class GlobalSonarStatistics implements SonarStatistics {
   @ApiStatus.Internal
   public static void countLogin() {
     LOGINS_PER_SECOND.put(ACTION_COUNTER.getAndIncrement(), (byte) 0);
-    totalJoinedPlayers++;
+    totalJoinedPlayers.incrementAndGet();
   }
 
   // Cache all per-session statistics
-  private static int totalJoinedPlayers;
-  public static int totalSuccessfulVerifications;
-  public static int totalFailedVerifications;
-  public static int totalAttemptedVerifications;
-  public static long totalBlacklistedPlayers;
-  public static long totalIncomingTraffic;
-  public static long totalOutgoingTraffic;
-  public static long perSecondIncomingTraffic;
-  public static long perSecondOutgoingTraffic;
-  private static String perSecondIncomingTrafficFormatted;
-  private static String perSecondOutgoingTrafficFormatted;
+  private static final AtomicInteger totalJoinedPlayers = new AtomicInteger();
+  public static final AtomicInteger totalSuccessfulVerifications = new AtomicInteger();
+  public static final AtomicInteger totalFailedVerifications = new AtomicInteger();
+  public static final AtomicInteger totalAttemptedVerifications = new AtomicInteger();
+  public static final AtomicLong totalBlacklistedPlayers = new AtomicLong();
+  public static final AtomicLong totalIncomingTraffic = new AtomicLong();
+  public static final AtomicLong totalOutgoingTraffic = new AtomicLong();
+  public static final AtomicLong perSecondIncomingTraffic = new AtomicLong();
+  public static final AtomicLong perSecondOutgoingTraffic = new AtomicLong();
+  private static volatile String perSecondIncomingTrafficFormatted;
+  private static volatile String perSecondOutgoingTrafficFormatted;
 
   public static void cleanUpCaches() {
     LOGINS_PER_SECOND.cleanUp();
@@ -75,12 +76,12 @@ public final class GlobalSonarStatistics implements SonarStatistics {
   }
 
   public static void hitEverySecond() {
-    totalIncomingTraffic += perSecondIncomingTraffic;
-    totalOutgoingTraffic += perSecondOutgoingTraffic;
-    perSecondIncomingTrafficFormatted = SimpleProcessProfiler.formatMemory(perSecondIncomingTraffic);
-    perSecondOutgoingTrafficFormatted = SimpleProcessProfiler.formatMemory(perSecondOutgoingTraffic);
-    perSecondIncomingTraffic = 0L;
-    perSecondOutgoingTraffic = 0L;
+    final long incoming = perSecondIncomingTraffic.getAndSet(0L);
+    final long outgoing = perSecondOutgoingTraffic.getAndSet(0L);
+    totalIncomingTraffic.addAndGet(incoming);
+    totalOutgoingTraffic.addAndGet(outgoing);
+    perSecondIncomingTrafficFormatted = SimpleProcessProfiler.formatMemory(incoming);
+    perSecondOutgoingTrafficFormatted = SimpleProcessProfiler.formatMemory(outgoing);
   }
 
   @Override
@@ -95,22 +96,22 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @Override
   public long getCurrentIncomingBandwidth() {
-    return perSecondIncomingTraffic;
+    return perSecondIncomingTraffic.get();
   }
 
   @Override
   public long getCurrentOutgoingBandwidth() {
-    return perSecondOutgoingTraffic;
+    return perSecondOutgoingTraffic.get();
   }
 
   @Override
   public long getTotalIncomingBandwidth() {
-    return totalIncomingTraffic;
+    return totalIncomingTraffic.get();
   }
 
   @Override
   public long getTotalOutgoingBandwidth() {
-    return totalOutgoingTraffic;
+    return totalOutgoingTraffic.get();
   }
 
   @Override
@@ -125,7 +126,7 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @Override
   public int getTotalPlayersJoined() {
-    return totalJoinedPlayers;
+    return totalJoinedPlayers.get();
   }
 
   @Override
@@ -135,12 +136,12 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @Override
   public int getTotalSuccessfulVerifications() {
-    return totalSuccessfulVerifications;
+    return totalSuccessfulVerifications.get();
   }
 
   @Override
   public int getTotalFailedVerifications() {
-    return totalFailedVerifications;
+    return totalFailedVerifications.get();
   }
 
   @Override
@@ -150,7 +151,7 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @Override
   public int getTotalAttemptedVerifications() {
-    return totalAttemptedVerifications;
+    return totalAttemptedVerifications.get();
   }
 
   @Override
@@ -160,6 +161,6 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @Override
   public long getTotalBlacklistSize() {
-    return totalBlacklistedPlayers;
+    return totalBlacklistedPlayers.get();
   }
 }
