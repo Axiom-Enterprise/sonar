@@ -78,7 +78,7 @@ public final class UserWrapper implements SonarUser {
     this.hostname = hostname;
     this.loginTimer = new SystemTimer();
 
-    GlobalSonarStatistics.totalAttemptedVerifications++;
+    GlobalSonarStatistics.totalAttemptedVerifications.incrementAndGet();
 
     if (Sonar.get0().getConfig().getVerification().isLogConnections()
       && (Sonar.get0().getAttackTracker().getCurrentAttack() == null

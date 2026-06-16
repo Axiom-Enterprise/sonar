@@ -23,16 +23,20 @@ import org.jetbrains.annotations.NotNull;
 @UtilityClass
 public class FingerprintingUtil {
 
-  /**
-   * Returns a hex string representing a hash of the username and IP address
-   */
+  private static final long FNV_OFFSET = 0xcbf29ce484222325L;
+  private static final long FNV_PRIME = 0x00000100000001B3L;
+
+  private static long fnv1a64(final @NotNull String input) {
+    long hash = FNV_OFFSET;
+    for (int i = 0; i < input.length(); i++) {
+      hash ^= input.charAt(i);
+      hash *= FNV_PRIME;
+    }
+    return hash;
+  }
+
   public @NotNull String getFingerprint(final @NotNull String username,
                                         final @NotNull String hostAddress) {
-    final int hash0 = username.hashCode();
-    final int hash1 = hostAddress.hashCode();
-    final int combined = hash0 + hash1;
-    return Integer.toHexString(hash0 >> 4)
-      + Integer.toHexString(combined << 2)
-      + Integer.toHexString(hash1 >> 4);
+    return Long.toHexString(fnv1a64(username)) + Long.toHexString(fnv1a64(hostAddress));
   }
 }

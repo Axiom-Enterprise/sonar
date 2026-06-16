@@ -37,7 +37,7 @@ public final class BandwidthHandler extends ChannelDuplexHandler {
     if (msg instanceof ByteBuf) {
       // Increment the incoming traffic by the number of readable bytes
       final int readableBytes = ((ByteBuf) msg).readableBytes();
-      GlobalSonarStatistics.perSecondIncomingTraffic += readableBytes;
+      GlobalSonarStatistics.perSecondIncomingTraffic.addAndGet(readableBytes);
     }
     ctx.fireChannelRead(msg);
   }
@@ -47,7 +47,7 @@ public final class BandwidthHandler extends ChannelDuplexHandler {
     if (msg instanceof ByteBuf) {
       // Increment the outgoing traffic by the number of readable bytes
       final int readableBytes = ((ByteBuf) msg).readableBytes();
-      GlobalSonarStatistics.perSecondOutgoingTraffic += readableBytes;
+      GlobalSonarStatistics.perSecondOutgoingTraffic.addAndGet(readableBytes);
     }
     ctx.write(msg, promise);
   }
