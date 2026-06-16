@@ -199,17 +199,17 @@ public final class GravityHandler extends VerificationHandler {
   private void handleMovement(final double x, final double y, final double z,
                               final boolean onGround, final boolean rotated) {
     if (!checkMovement) {
-      // No need to continue checking if the gravity and collision checks are disabled
-      if (!enableGravityCheck && !enableCollisionsCheck) {
-        markSuccess();
-        return;
-      }
-
       // Check if the packet has characteristics of a packet after a teleport
       checkState(rotated, "illegal movement packet order");
       checkState(!onGround, "illegal ground state on teleport");
       checkState(x == SPAWN_X_POSITION, "invalid x: " + x);
       checkState(z == SPAWN_Z_POSITION, "invalid z: " + z);
+
+      // No need to continue checking if the gravity and collision checks are disabled
+      if (!enableGravityCheck && !enableCollisionsCheck) {
+        markSuccess();
+        return;
+      }
 
       // Synchronize the Y coordinate
       this.y = dynamicSpawnYPosition;
@@ -241,8 +241,12 @@ public final class GravityHandler extends VerificationHandler {
 
     // The player is not allowed to move away from the collision platform.
     // This should not happen unless the max movement tick is configured to a high number.
-    checkState(Math.abs(Math.abs(x) - BLOCKS_PER_ROW) < BLOCKS_PER_ROW, "illegal x offset: " + x);
-    checkState(Math.abs(Math.abs(z) - BLOCKS_PER_ROW) < BLOCKS_PER_ROW, "illegal z offset: " + z);
+    if (Math.abs(Math.abs(x) - BLOCKS_PER_ROW) >= BLOCKS_PER_ROW) {
+      fail("illegal x offset: " + x);
+    }
+    if (Math.abs(Math.abs(z) - BLOCKS_PER_ROW) >= BLOCKS_PER_ROW) {
+      fail("illegal z offset: " + z);
+    }
 
     if (!onGround) {
       // The deltaY is 0 whenever the player sends their first position packet.

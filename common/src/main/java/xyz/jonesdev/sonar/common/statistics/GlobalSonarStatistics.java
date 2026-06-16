@@ -17,30 +17,20 @@
 
 package xyz.jonesdev.sonar.common.statistics;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Ticker;
 import org.jetbrains.annotations.ApiStatus;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler;
 import xyz.jonesdev.sonar.api.statistics.SonarStatistics;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 public final class GlobalSonarStatistics implements SonarStatistics {
-  private static final Cache<Integer, Byte> LOGINS_PER_SECOND = Caffeine.newBuilder()
-    .expireAfterWrite(Duration.ofSeconds(1))
-    .ticker(Ticker.systemTicker())
-    .build();
-
-  private static final Cache<Integer, Byte> CONNECTIONS_PER_SECOND = Caffeine.newBuilder()
-    .expireAfterWrite(Duration.ofSeconds(1))
-    .ticker(Ticker.systemTicker())
-    .build();
-
-  private static final AtomicInteger ACTION_COUNTER = new AtomicInteger(Integer.MIN_VALUE);
+  private static final LongAdder CONNECTIONS_THIS_SECOND = new LongAdder();
+  private static final LongAdder LOGINS_THIS_SECOND = new LongAdder();
+  private static volatile long connectionsPerSecond;
+  private static volatile long loginsPerSecond;
 
   /**
    * Helper methods that make it easier to count new statistics
@@ -48,12 +38,12 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @ApiStatus.Internal
   public static void countConnection() {
-    CONNECTIONS_PER_SECOND.put(ACTION_COUNTER.getAndIncrement(), (byte) 0);
+    CONNECTIONS_THIS_SECOND.increment();
   }
 
   @ApiStatus.Internal
   public static void countLogin() {
-    LOGINS_PER_SECOND.put(ACTION_COUNTER.getAndIncrement(), (byte) 0);
+    LOGINS_THIS_SECOND.increment();
     totalJoinedPlayers.incrementAndGet();
   }
 
@@ -71,11 +61,12 @@ public final class GlobalSonarStatistics implements SonarStatistics {
   private static volatile String perSecondOutgoingTrafficFormatted;
 
   public static void cleanUpCaches() {
-    LOGINS_PER_SECOND.cleanUp();
-    CONNECTIONS_PER_SECOND.cleanUp();
+    // no-op: caches replaced with LongAdder counters
   }
 
   public static void hitEverySecond() {
+    connectionsPerSecond = CONNECTIONS_THIS_SECOND.sumThenReset();
+    loginsPerSecond = LOGINS_THIS_SECOND.sumThenReset();
     final long incoming = perSecondIncomingTraffic.getAndSet(0L);
     final long outgoing = perSecondOutgoingTraffic.getAndSet(0L);
     totalIncomingTraffic.addAndGet(incoming);
@@ -86,12 +77,12 @@ public final class GlobalSonarStatistics implements SonarStatistics {
 
   @Override
   public long getConnectionsPerSecond() {
-    return CONNECTIONS_PER_SECOND.estimatedSize();
+    return connectionsPerSecond;
   }
 
   @Override
   public long getLoginsPerSecond() {
-    return LOGINS_PER_SECOND.estimatedSize();
+    return loginsPerSecond;
   }
 
   @Override
