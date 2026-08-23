@@ -9,12 +9,13 @@ name: Sonar CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -62,3 +63,19 @@ jobs:
           name: Sonar-Velocity
           path: velocity/build/libs/Sonar-Velocity.jar
           if-no-files-found: error
+
+      - name: Update rolling dev release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete dev --cleanup-tag --yes || true
+          gh release create dev \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Dev build ($(git rev-parse --short HEAD))" \
+            --notes "Automatic build from \`$GITHUB_REF_NAME\` @ $GITHUB_SHA" \
+            bukkit/build/libs/Sonar-Bukkit.jar \
+            paper/build/libs/Sonar-Paper.jar \
+            bungeecord/build/libs/Sonar-Bungee.jar \
+            velocity/build/libs/Sonar-Velocity.jar
