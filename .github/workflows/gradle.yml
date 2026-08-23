@@ -17,6 +17,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -65,11 +69,13 @@ jobs:
           if-no-files-found: error
 
       - name: Update rolling dev release
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete dev --cleanup-tag --yes || true
+          if gh release view dev >/dev/null 2>&1; then
+            gh release delete dev --cleanup-tag --yes
+          fi
           gh release create dev \
             --prerelease \
             --target "$GITHUB_SHA" \
