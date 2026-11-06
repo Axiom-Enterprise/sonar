@@ -49,6 +49,7 @@ import java.util.concurrent.Executors;
 public final class VerifiedPlayerController {
   @Getter
   private final Set<String> cache = Collections.synchronizedSet(new HashSet<>());
+  @Getter
   private @Nullable ConnectionSource connectionSource;
   private Dao<VerifiedPlayer, Integer> dao;
   private QueryBuilder<VerifiedPlayer, Integer> queryBuilder;

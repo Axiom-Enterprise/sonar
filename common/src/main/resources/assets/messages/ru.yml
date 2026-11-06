@@ -244,6 +244,12 @@ verification:
     - <red>Пожалуйста, подождите несколько минут, чтобы снова присоединиться к серверу.
     - <gold>Вы считаете что это ошибка? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Сообщение, которое показывается когда кто-то входит на сервер с некорректным ником
   invalid-username:
     - <header>

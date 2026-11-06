@@ -22,9 +22,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
 import xyz.jonesdev.sonar.api.antibot.ratelimit.Ratelimiter;
+import xyz.jonesdev.sonar.api.antibot.subnet.SubnetRange;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 
 import java.net.InetAddress;
@@ -47,6 +49,60 @@ public final class AntiBot {
   private CaptchaGenerator captchaGenerator;
   @Setter
   private Ratelimiter<InetAddress> ratelimiter;
+  @Setter
+  private Cache<InetAddress, Boolean> serverListPings;
+  @Setter
+  private long serverListPingMaxAge;
+
+  /**
+   * Builds the blacklist key of an address by grouping it into its configured subnet.
+   * This prevents attackers from bypassing the blacklist by rotating addresses inside the same network
+   * (e.g. a single IPv6 /64 contains billions of addresses).
+   *
+   * @param inetAddress The address of the player
+   * @return The key used inside the blacklist cache
+   */
+  public @NotNull String getBlacklistKey(final @NotNull InetAddress inetAddress) {
+    final SonarConfiguration.Verification verification = Sonar.get0().getConfig().getVerification();
+    final int prefixLength = inetAddress.getAddress().length == 4
+      ? verification.getBlacklistIpv4Prefix()
+      : verification.getBlacklistIpv6Prefix();
+    return SubnetRange.toSubnetKey(inetAddress, prefixLength);
+  }
+
+  /**
+   * @param inetAddress The address of the player
+   * @return {@code true} if the address is inside one of the configured allowlist ranges
+   */
+  public boolean isAllowlisted(final @NotNull InetAddress inetAddress) {
+    for (final SubnetRange range : Sonar.get0().getConfig().getAllowlist()) {
+      if (range.contains(inetAddress)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Remembers that the given address has requested the server list (status handshake).
+   *
+   * @param inetAddress The address that pinged the server
+   */
+  public void markServerListPing(final @NotNull InetAddress inetAddress) {
+    if (serverListPings != null) {
+      serverListPings.put(inetAddress, Boolean.TRUE);
+    }
+  }
+
+  /**
+   * @param inetAddress The address of the player
+   * @return {@code true} if the address must have pinged the server list before joining, but did not
+   */
+  public boolean isMissingServerListPing(final @NotNull InetAddress inetAddress) {
+    return serverListPings != null
+      && shouldPerform(Sonar.get0().getConfig().getVerification().getServerListPing().getTiming())
+      && serverListPings.getIfPresent(inetAddress) == null;
+  }
 
   public boolean shouldVerifyNewPlayers() {
     return shouldPerform(Sonar.get0().getConfig().getVerification().getTiming());

@@ -47,6 +47,17 @@ final class BungeeInboundHandler extends InboundHandlerAdapter {
     }
   }
 
+  /**
+   * Reads the channel wrapper, which holds the real (potentially proxied) address of the player
+   */
+  private static ChannelWrapper getChannelWrapper(final @NotNull HandlerBoss handlerBoss) {
+    try {
+      return (ChannelWrapper) CHANNEL_WRAPPER_GETTER.invokeExact(handlerBoss);
+    } catch (final Throwable throwable) {
+      throw new ReflectiveOperationException(throwable);
+    }
+  }
+
   @Override
   public void channelRead(final @NotNull ChannelHandlerContext ctx, final Object msg) throws Exception {
     if (msg instanceof PacketWrapper) {
@@ -56,8 +67,12 @@ final class BungeeInboundHandler extends InboundHandlerAdapter {
       if (wrappedPacket != null) {
         if (wrappedPacket instanceof Handshake) {
           final Handshake handshake = (Handshake) wrappedPacket;
-          // We don't care about server pings; remove the handler
+          // Remember the server ping for the server list ping check, then remove the handler
           if (handshake.getRequestedProtocol() == STATUS) {
+            final HandlerBoss handlerBoss = ctx.pipeline().get(HandlerBoss.class);
+            final ChannelWrapper channelWrapper = handlerBoss != null ? getChannelWrapper(handlerBoss) : null;
+            handleStatusHandshake(channelWrapper != null
+              ? channelWrapper.getRemoteAddress() : ctx.channel().remoteAddress());
             ctx.pipeline().remove(this);
           } else {
             handleHandshake(ctx, handshake.getHost(), handshake.getProtocolVersion());
@@ -69,12 +84,7 @@ final class BungeeInboundHandler extends InboundHandlerAdapter {
           // This might sometimes happen if the client unexpectedly disconnects
           if (handlerBoss != null) {
             // Get the real IP address of the player through the channel wrapper
-            final ChannelWrapper channelWrapper;
-            try {
-              channelWrapper = (ChannelWrapper) CHANNEL_WRAPPER_GETTER.invokeExact(handlerBoss);
-            } catch (final Throwable throwable) {
-              throw new ReflectiveOperationException(throwable);
-            }
+            final ChannelWrapper channelWrapper = getChannelWrapper(handlerBoss);
             // We've done our job - deject this pipeline
             ctx.pipeline().remove(this);
             // Make sure to mark this packet as released

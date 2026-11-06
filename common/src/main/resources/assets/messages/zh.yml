@@ -238,6 +238,12 @@ verification:
     - <red>请等待几分钟后重新加入服务器
     - <gold>您认为您不应该被禁止? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # 当玩家尝试加入 但他们的用户名包含不允许的字符时显示的踢出消息
   invalid-username:
     - <header>

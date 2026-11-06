@@ -37,6 +37,7 @@ import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -71,6 +72,21 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
   }
 
   /**
+   * Remembers that the address requested the server list (status handshake);
+   * used by the server list ping check before letting new players join
+   *
+   * @param socketAddress The (potentially proxied) real address of the client
+   */
+  protected static void handleStatusHandshake(final @Nullable SocketAddress socketAddress) {
+    if (socketAddress instanceof InetSocketAddress) {
+      final InetAddress inetAddress = ((InetSocketAddress) socketAddress).getAddress();
+      if (inetAddress != null) {
+        Sonar.get0().getAntiBot().markServerListPing(inetAddress);
+      }
+    }
+  }
+
+  /**
    * Validates and handles incoming login packets
    */
   protected final void handleLogin(final @NotNull ChannelHandlerContext ctx,
@@ -99,6 +115,12 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
     final InetAddress inetAddress = socketAddress.getAddress();
     ctx.pipeline().get(InboundHandler.class).setInetAddress(inetAddress);
 
+    // Trusted addresses (staff, monitoring, backend servers) skip the blacklist, rate limit and verification
+    if (Sonar.get0().getAntiBot().isAllowlisted(inetAddress)) {
+      initialLogin(ctx.channel(), inetAddress, initialLoginAction);
+      return;
+    }
+
     // Check if Sonar is already verifying a player with the same IP address
     if (Sonar.get0().getAntiBot().getConnected().containsKey(inetAddress)) {
       customDisconnect(ctx.channel(), alreadyVerifying, protocolVersion);
@@ -112,10 +134,11 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
     }
 
     final String hostAddress = inetAddress.getHostAddress();
-    // Check if the player failed the verification too many times
+    // Check if the player (or their subnet) failed the verification too many times
     final int limit = Sonar.get0().getConfig().getVerification().getBlacklistThreshold();
     if (limit > 0) {
-      final int score = Sonar.get0().getAntiBot().getBlacklist().asMap().getOrDefault(hostAddress, 0);
+      final String blacklistKey = Sonar.get0().getAntiBot().getBlacklistKey(inetAddress);
+      final int score = Sonar.get0().getAntiBot().getBlacklist().asMap().getOrDefault(blacklistKey, 0);
       if (score >= limit) {
         customDisconnect(ctx.channel(), blacklisted, protocolVersion);
         return;
@@ -146,6 +169,12 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
     final String fingerprint = FingerprintingUtil.getFingerprint(username, hostAddress);
     if (Sonar.get0().getVerifiedPlayerController().getCache().contains(fingerprint)) {
       initialLogin(ctx.channel(), inetAddress, initialLoginAction);
+      return;
+    }
+
+    // Many bots join directly without ever requesting the server list like a real client would
+    if (Sonar.get0().getAntiBot().isMissingServerListPing(inetAddress)) {
+      customDisconnect(ctx.channel(), serverListPingRequired, protocolVersion);
       return;
     }
 

@@ -238,6 +238,12 @@ verification:
     - <red>Sunucuya tekrar katılabilmek için lütfen birkaç dakika bekleyin.
     - <gold>Bunun bir hata olduğunu mu düşünüyorsunuz? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Birisi geçersiz bir kullanıcı adıyla katıldığında gösterilen bağlantıyı kesme mesajı
   invalid-username:
     - <header>

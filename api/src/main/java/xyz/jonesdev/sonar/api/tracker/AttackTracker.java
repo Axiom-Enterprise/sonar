@@ -18,14 +18,18 @@
 package xyz.jonesdev.sonar.api.tracker;
 
 import lombok.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 import xyz.jonesdev.sonar.api.event.impl.AttackDetectedEvent;
 import xyz.jonesdev.sonar.api.event.impl.AttackMitigatedEvent;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
+import xyz.jonesdev.sonar.api.webhook.DiscordWebhook;
+import xyz.jonesdev.sonar.api.webhook.GenericWebhook;
 
-import java.util.Optional;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler.*;
 
@@ -49,6 +53,8 @@ public final class AttackTracker {
     private long peakProcessMemoryUsage;
     // Calculate during-attack-statistics using their deltas
     private int successfulVerifications, failedVerifications;
+    // Whether the webhooks have already been notified about the start of this attack
+    private boolean startNotified;
   }
 
   public void checkIfUnderAttack() {
@@ -73,6 +79,12 @@ public final class AttackTracker {
       } else {
         // Reset attack timer if we're still under attack
         currentAttack.timer.reset();
+      }
+
+      // Only notify webhooks once the attack exceeded the threshold, so short spikes don't spam them
+      if (!currentAttack.startNotified && attackThreshold > Sonar.get0().getConfig().getMinAttackThreshold()) {
+        currentAttack.startNotified = true;
+        postAttackStartWebhooks(joinsPerSecond, verifyingPlayers, queuedPlayers);
       }
 
       // Update attack statistics
@@ -102,44 +114,7 @@ public final class AttackTracker {
         Sonar.get0().getEventManager().publish(new AttackMitigatedEvent(currentAttack));
 
         if (++attackThreshold > Sonar.get0().getConfig().getMinAttackThreshold()) {
-          // Post webhook to Discord
-          Optional.ofNullable(Sonar.get0().getConfig().getWebhook().getDiscordWebhook())
-            .ifPresent(webhook -> {
-              // Save attack statistics
-              final long deltaInMillis = currentAttack.duration.delay();
-              final String peakCPU = Sonar.DECIMAL_FORMAT.format(currentAttack.peakProcessCPUUsage);
-              final String peakMem = formatMemory(currentAttack.peakProcessMemoryUsage);
-              final String peakBPS = Sonar.DECIMAL_FORMAT.format(currentAttack.peakJoinsPerSecond);
-              final String peakCPS = Sonar.DECIMAL_FORMAT.format(currentAttack.peakConnectionsPerSecond);
-              final long minutes = deltaInMillis / (60 * 1000); // Convert milliseconds to minutes
-              final double seconds = (deltaInMillis % (60 * 1000)) / 1000D; // Convert remaining milliseconds to seconds
-              final String formattedDuration = String.format("%d minutes, %.0f seconds", minutes, seconds);
-              final String startTimestamp = String.valueOf(currentAttack.duration.getStart() / 1000L);
-              final String endTimestamp = String.valueOf(System.currentTimeMillis() / 1000L);
-              final long blacklisted = Sonar.get0().getAntiBot().getBlacklist().estimatedSize();
-              // Calculate during-attack-statistics using their deltas
-              final long totalVerified = Sonar.get0().getVerifiedPlayerController().getCache().size();
-              final long verified = Math.max(totalVerified - currentAttack.successfulVerifications, 0);
-              final long totalFailed = Sonar.get0().getStatistics().getTotalFailedVerifications();
-              final long failed = Math.max(totalFailed - currentAttack.failedVerifications, 0);
-
-              webhook.post(() -> {
-                final SonarConfiguration.Webhook.Embed config = Sonar.get0().getConfig().getWebhook().getEmbed();
-                final String description = config.getDescription()
-                  .replace("<start-timestamp>", startTimestamp)
-                  .replace("<end-timestamp>", endTimestamp)
-                  .replace("<attack-duration>", formattedDuration)
-                  .replace("<peak-cpu>", peakCPU)
-                  .replace("<peak-memory>", peakMem)
-                  .replace("<peak-bps>", peakBPS)
-                  .replace("<peak-cps>", peakCPS)
-                  .replace("<total-blacklisted>", Sonar.DECIMAL_FORMAT.format(blacklisted))
-                  .replace("<total-failed>", Sonar.DECIMAL_FORMAT.format(failed))
-                  .replace("<total-success>", Sonar.DECIMAL_FORMAT.format(verified));
-                return new SonarConfiguration.Webhook.Embed(
-                  config.getTitle(), config.getTitleUrl(), description, config.getR(), config.getG(), config.getB());
-              });
-            });
+          postAttackEndWebhooks(currentAttack);
         }
 
         // Reset the attack status
@@ -148,6 +123,110 @@ public final class AttackTracker {
       }
     } else {
       attackThreshold = 0;
+    }
+  }
+
+  /**
+   * Notifies Discord (if the start embed is enabled) and the generic webhook that an attack has started.
+   * This method only runs once per attack, so no additional cooldown is needed.
+   */
+  private static void postAttackStartWebhooks(final long joinsPerSecond,
+                                              final int verifyingPlayers,
+                                              final int queuedPlayers) {
+    final SonarConfiguration.Webhook config = Sonar.get0().getConfig().getWebhook();
+    final long connectionsPerSecond = Sonar.get0().getStatistics().getConnectionsPerSecond();
+    final String startTimestamp = String.valueOf(System.currentTimeMillis() / 1000L);
+
+    final DiscordWebhook discordWebhook = config.getDiscordWebhook();
+    if (discordWebhook != null && config.isStartEmbedEnabled()) {
+      discordWebhook.post(() -> {
+        final SonarConfiguration.Webhook.Embed embed = config.getStartEmbed();
+        final String description = embed.getDescription()
+          .replace("<start-timestamp>", startTimestamp)
+          .replace("<bps>", Sonar.DECIMAL_FORMAT.format(joinsPerSecond))
+          .replace("<cps>", Sonar.DECIMAL_FORMAT.format(connectionsPerSecond))
+          .replace("<verifying>", Sonar.DECIMAL_FORMAT.format(verifyingPlayers))
+          .replace("<queued>", Sonar.DECIMAL_FORMAT.format(queuedPlayers));
+        return new SonarConfiguration.Webhook.Embed(
+          embed.getTitle(), embed.getTitleUrl(), description, embed.getR(), embed.getG(), embed.getB());
+      });
+    }
+
+    final GenericWebhook genericWebhook = config.getGenericWebhook();
+    if (genericWebhook != null) {
+      final Map<String, Object> data = new LinkedHashMap<>();
+      data.put("start-timestamp", Long.parseLong(startTimestamp));
+      data.put("bps", joinsPerSecond);
+      data.put("cps", connectionsPerSecond);
+      data.put("verifying", verifyingPlayers);
+      data.put("queued", queuedPlayers);
+      genericWebhook.post(GenericWebhook.ATTACK_START, data);
+    }
+  }
+
+  /**
+   * Notifies Discord and the generic webhook that an attack has been mitigated.
+   *
+   * @param attack Statistics of the attack that just ended
+   */
+  private static void postAttackEndWebhooks(final @NotNull AttackStatistics attack) {
+    final DiscordWebhook discordWebhook = Sonar.get0().getConfig().getWebhook().getDiscordWebhook();
+    final GenericWebhook genericWebhook = Sonar.get0().getConfig().getWebhook().getGenericWebhook();
+    if (discordWebhook == null && genericWebhook == null) {
+      return;
+    }
+
+    // Save attack statistics
+    final long deltaInMillis = attack.duration.delay();
+    final long minutes = deltaInMillis / (60 * 1000); // Convert milliseconds to minutes
+    final double seconds = (deltaInMillis % (60 * 1000)) / 1000D; // Convert remaining milliseconds to seconds
+    final String formattedDuration = String.format("%d minutes, %.0f seconds", minutes, seconds);
+    final long startTimestamp = attack.duration.getStart() / 1000L;
+    final long endTimestamp = System.currentTimeMillis() / 1000L;
+    final long blacklisted = Sonar.get0().getAntiBot().getBlacklist().estimatedSize();
+    // Calculate during-attack-statistics using their deltas
+    final long totalVerified = Sonar.get0().getVerifiedPlayerController().getCache().size();
+    final long verified = Math.max(totalVerified - attack.successfulVerifications, 0);
+    final long totalFailed = Sonar.get0().getStatistics().getTotalFailedVerifications();
+    final long failed = Math.max(totalFailed - attack.failedVerifications, 0);
+
+    if (discordWebhook != null) {
+      final String peakCPU = Sonar.DECIMAL_FORMAT.format(attack.peakProcessCPUUsage);
+      final String peakMem = formatMemory(attack.peakProcessMemoryUsage);
+      final String peakBPS = Sonar.DECIMAL_FORMAT.format(attack.peakJoinsPerSecond);
+      final String peakCPS = Sonar.DECIMAL_FORMAT.format(attack.peakConnectionsPerSecond);
+
+      discordWebhook.post(() -> {
+        final SonarConfiguration.Webhook.Embed config = Sonar.get0().getConfig().getWebhook().getEmbed();
+        final String description = config.getDescription()
+          .replace("<start-timestamp>", String.valueOf(startTimestamp))
+          .replace("<end-timestamp>", String.valueOf(endTimestamp))
+          .replace("<attack-duration>", formattedDuration)
+          .replace("<peak-cpu>", peakCPU)
+          .replace("<peak-memory>", peakMem)
+          .replace("<peak-bps>", peakBPS)
+          .replace("<peak-cps>", peakCPS)
+          .replace("<total-blacklisted>", Sonar.DECIMAL_FORMAT.format(blacklisted))
+          .replace("<total-failed>", Sonar.DECIMAL_FORMAT.format(failed))
+          .replace("<total-success>", Sonar.DECIMAL_FORMAT.format(verified));
+        return new SonarConfiguration.Webhook.Embed(
+          config.getTitle(), config.getTitleUrl(), description, config.getR(), config.getG(), config.getB());
+      });
+    }
+
+    if (genericWebhook != null) {
+      final Map<String, Object> data = new LinkedHashMap<>();
+      data.put("start-timestamp", startTimestamp);
+      data.put("end-timestamp", endTimestamp);
+      data.put("duration-millis", deltaInMillis);
+      data.put("peak-cpu", attack.peakProcessCPUUsage);
+      data.put("peak-memory-bytes", attack.peakProcessMemoryUsage);
+      data.put("peak-bps", attack.peakJoinsPerSecond);
+      data.put("peak-cps", attack.peakConnectionsPerSecond);
+      data.put("total-blacklisted", blacklisted);
+      data.put("total-failed", failed);
+      data.put("total-success", verified);
+      genericWebhook.post(GenericWebhook.ATTACK_END, data);
     }
   }
 }

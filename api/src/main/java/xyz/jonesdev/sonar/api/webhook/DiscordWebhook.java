@@ -24,14 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
@@ -41,30 +35,14 @@ public final class DiscordWebhook {
   private final String url;
 
   private static final Gson GSON = new GsonBuilder().create();
-  private static final ExecutorService HTTP_REQUEST_SERVICE = Executors.newSingleThreadExecutor();
 
   /**
    * Asynchronously posts a Discord webhook via HTTPS
    */
   public void post(final Supplier<SonarConfiguration.Webhook.Embed> embed) {
-    HTTP_REQUEST_SERVICE.execute(() -> {
-      try {
-        final String serializedContent = prepareSerializedContent(embed.get());
-        final HttpsURLConnection urlConnection = prepareConnection(new URL(url), serializedContent);
-
-        try (final OutputStream outputStream = urlConnection.getOutputStream()) {
-          outputStream.write(serializedContent.getBytes(StandardCharsets.UTF_8));
-        }
-
-        // Discord replies with HTTP_NO_CONTENT (204) if the request is successful
-        final int code = urlConnection.getResponseCode();
-        if (code != HTTP_NO_CONTENT) {
-          Sonar.get0().getLogger().warn("Unexpected Discord webhook response code {}", code);
-        }
-      } catch (Exception exception) {
-        Sonar.get0().getLogger().error("Could not send webhook: {}", exception);
-      }
-    });
+    // Discord replies with HTTP_NO_CONTENT (204) if the request is successful
+    WebhookHttpClient.postJson(url, () -> prepareSerializedContent(embed.get()),
+      code -> code == HTTP_NO_CONTENT, "Discord");
   }
 
   private static String prepareSerializedContent(final SonarConfiguration.Webhook.@NotNull Embed embed) {
@@ -84,20 +62,6 @@ public final class DiscordWebhook {
 
     final Webhook webhook = new Webhook(content, username, avatarUrl, false, embeds);
     return GSON.toJson(webhook);
-  }
-
-  private @NotNull HttpsURLConnection prepareConnection(final @NotNull URL url,
-                                                        final @NotNull String serializedContent) throws Exception {
-    final HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-    // Set connection timeout
-    urlConnection.setConnectTimeout(15000);
-    // Set necessary properties
-    urlConnection.setRequestProperty("Content-Type", "application/json");
-    urlConnection.setRequestProperty("Content-Length", String.valueOf(serializedContent.length()));
-    urlConnection.setRequestProperty("User-Agent", "Sonar");
-    urlConnection.setDoOutput(true);
-    urlConnection.setRequestMethod("POST");
-    return urlConnection;
   }
 
   @SuppressWarnings("unused")

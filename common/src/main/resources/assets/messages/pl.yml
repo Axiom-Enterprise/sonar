@@ -240,6 +240,12 @@ verification:
     - <red>Obecnie nie możesz wejść na serwer.
     - <red>Odczekaj kilka minut, aby móc ponownie dołączyć do serwera.
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Disconnect message that is shown when someone joins with an invalid username
   invalid-username:
     - <header>

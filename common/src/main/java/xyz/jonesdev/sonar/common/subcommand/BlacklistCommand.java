@@ -20,10 +20,14 @@ package xyz.jonesdev.sonar.common.subcommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.subnet.SubnetRange;
 import xyz.jonesdev.sonar.api.command.InvocationSource;
 import xyz.jonesdev.sonar.api.command.subcommand.Subcommand;
 import xyz.jonesdev.sonar.api.command.subcommand.SubcommandInfo;
+
+import java.net.InetAddress;
 
 @SubcommandInfo(
   name = "blacklist",
@@ -40,7 +44,7 @@ public final class BlacklistCommand extends Subcommand {
           return;
         }
 
-        final String rawAddress = validateIP(source, args[2]);
+        final String rawAddress = toBlacklistKey(validateIP(source, args[2]));
         // Make sure the given IP address is valid
         if (rawAddress == null) return;
 
@@ -53,6 +57,7 @@ public final class BlacklistCommand extends Subcommand {
         }
 
         Sonar.get0().getAntiBot().getBlacklist().put(rawAddress, 1337 /* arbitrarily high number */);
+        Sonar.get0().getBlacklistController().save(rawAddress, 1337);
         source.sendMessage(MiniMessage.miniMessage().deserialize(
           Sonar.get0().getConfig().getMessagesConfig().getString("commands.blacklist.add"),
           Placeholder.component("prefix", Sonar.get0().getConfig().getPrefix()),
@@ -66,7 +71,7 @@ public final class BlacklistCommand extends Subcommand {
           return;
         }
 
-        final String rawAddress = validateIP(source, args[2]);
+        final String rawAddress = toBlacklistKey(validateIP(source, args[2]));
         // Make sure the given IP address is valid
         if (rawAddress == null) return;
 
@@ -78,6 +83,7 @@ public final class BlacklistCommand extends Subcommand {
         }
 
         Sonar.get0().getAntiBot().getBlacklist().invalidate(rawAddress);
+        Sonar.get0().getBlacklistController().remove(rawAddress);
         source.sendMessage(MiniMessage.miniMessage().deserialize(
           Sonar.get0().getConfig().getMessagesConfig().getString("commands.blacklist.remove"),
           Placeholder.component("prefix", Sonar.get0().getConfig().getPrefix()),
@@ -96,6 +102,7 @@ public final class BlacklistCommand extends Subcommand {
         }
 
         Sonar.get0().getAntiBot().getBlacklist().invalidateAll();
+        Sonar.get0().getBlacklistController().clear();
         source.sendMessage(MiniMessage.miniMessage().deserialize(
           Sonar.get0().getConfig().getMessagesConfig().getString("commands.blacklist.clear"),
           Placeholder.component("prefix", Sonar.get0().getConfig().getPrefix()),
@@ -118,5 +125,20 @@ public final class BlacklistCommand extends Subcommand {
         break;
       }
     }
+  }
+
+  /**
+   * Converts a validated IP address into the key used by the blacklist,
+   * so manual entries are grouped by the same subnet as automatic ones.
+   *
+   * @param rawAddress The validated IP address or {@code null} if it was invalid
+   * @return The blacklist key or {@code null} if the address was invalid
+   */
+  private static @Nullable String toBlacklistKey(final @Nullable String rawAddress) {
+    if (rawAddress == null) {
+      return null;
+    }
+    final InetAddress inetAddress = SubnetRange.parseLiteral(rawAddress);
+    return inetAddress == null ? rawAddress : Sonar.get0().getAntiBot().getBlacklistKey(inetAddress);
   }
 }

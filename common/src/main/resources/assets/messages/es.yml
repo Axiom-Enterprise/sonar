@@ -238,6 +238,12 @@ verification:
     - <red>Espere unos minutos para poder unirse nuevamente al servidor.
     - <gold>¿Falso positivo? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Disconnect message that is shown when someone joins with an invalid username
   invalid-username:
     - <header>

@@ -238,6 +238,12 @@ verification:
     - <red>Počkejte prosím několik minut, abyste se mohli znovu připojit k serveru.
     - <gold>Falešně pozitivní? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Zpráva o odpojení, která se zobrazí, když se někdo připojí s neplatným uživatelským jménem
   invalid-username:
     - <header>

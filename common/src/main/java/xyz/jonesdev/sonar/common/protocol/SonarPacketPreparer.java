@@ -139,6 +139,7 @@ public class SonarPacketPreparer {
   public SonarPacket protocolBlacklisted;
   public SonarPacket unsupportedVersion;
   public SonarPacket tooManyOnlinePerIP;
+  public SonarPacket serverListPingRequired;
   public SonarPacket[] xpCountdown;
   public SonarPacket updateTime;
 
@@ -217,6 +218,7 @@ public class SonarPacketPreparer {
     reconnectedTooFast = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getTooFastReconnect(), true));
     unsupportedVersion = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getUnsupportedVersion(), true));
     tooManyOnlinePerIP = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getTooManyOnlinePerIp(), true));
+    serverListPingRequired = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getServerListPingRequired(), true));
 
     // Prepare update time packet
     final int timeOfDay = Sonar.get0().getConfig().getVerification().getTimeOfDay();
