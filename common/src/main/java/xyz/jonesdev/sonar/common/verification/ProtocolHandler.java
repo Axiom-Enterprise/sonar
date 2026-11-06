@@ -70,7 +70,13 @@ public final class ProtocolHandler extends VerificationHandler {
       } else if (waitingSlotConfirm) {
         waitingSlotConfirm = false;
         expectedSlotId = -1;
-        sendArmAnimation();
+        // The player did not send duplicate packets, so they pass this check
+        // 26.3+ removed client-side swing packet echo, so exempt 26.3+ from the arm animation check
+        if (user.isGeyser() || user.getProtocolVersion().greaterThanOrEquals(ProtocolVersion.MINECRAFT_26_3)) {
+          markSuccess();
+        } else {
+          sendArmAnimation();
+        }
       } else {
         sendSetHeldItem();
       }
