@@ -26,12 +26,14 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.subnet.SubnetRange;
 import xyz.jonesdev.sonar.api.command.SonarCommand;
 import xyz.jonesdev.sonar.api.database.ormlite.H2DatabaseTypeAdapter;
 import xyz.jonesdev.sonar.api.database.ormlite.MariaDbDatabaseTypeAdapter;
 import xyz.jonesdev.sonar.api.database.ormlite.MysqlDatabaseTypeAdapter;
 import xyz.jonesdev.sonar.api.database.ormlite.PostgresDatabaseTypeAdapter;
 import xyz.jonesdev.sonar.api.webhook.DiscordWebhook;
+import xyz.jonesdev.sonar.api.webhook.GenericWebhook;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -141,6 +143,7 @@ public final class SonarConfiguration {
     // General settings
     logPlayerAddresses = generalConfig.getBoolean("general.log-player-addresses");
     maxOnlinePerIp = clamp(generalConfig.getInt("general.max-online-per-ip"), -1, 99);
+    loadAllowlist();
 
     // Attack tracker
     minPlayersForAttack = clamp(generalConfig.getInt("attack-tracker.min-players-for-attack"), 2, 1024);
@@ -151,6 +154,7 @@ public final class SonarConfiguration {
     // Database
     database.type = Database.Type.valueOf(generalConfig.getString("database.type").toUpperCase());
     database.maximumAge = clamp(generalConfig.getInt("database.maximum-age"), 1, 365);
+    database.persistBlacklist = generalConfig.getBoolean("database.persist-blacklist");
 
     // Queue
     queue.maxQueuePolls = clamp(generalConfig.getInt("queue.max-polls"), 1, 1000);
@@ -193,6 +197,9 @@ public final class SonarConfiguration {
       }
     }
 
+    verification.serverListPing.timing = Verification.Timing.valueOf(generalConfig.getString("verification.checks.server-list-ping.timing"));
+    verification.serverListPing.maxAge = clamp(generalConfig.getInt("verification.checks.server-list-ping.max-age"), 1000, 3600000);
+
     verification.brand.enabled = generalConfig.getBoolean("verification.checks.client-brand.enabled");
     verification.brand.validRegex = Pattern.compile(generalConfig.getString("verification.checks.client-brand.valid-regex"));
     verification.brand.maxLength = generalConfig.getInt("verification.checks.client-brand.max-length");
@@ -213,6 +220,8 @@ public final class SonarConfiguration {
     verification.rememberTime = clamp(generalConfig.getInt("verification.remember-time"), 0, 86400000);
     verification.blacklistTime = clamp(generalConfig.getInt("verification.blacklist-time"), 0, 86400000);
     verification.blacklistThreshold = clamp(generalConfig.getInt("verification.blacklist-threshold"), 0, 100);
+    verification.blacklistIpv4Prefix = clamp(generalConfig.getInt("verification.blacklist-ipv4-prefix"), 8, 32);
+    verification.blacklistIpv6Prefix = clamp(generalConfig.getInt("verification.blacklist-ipv6-prefix"), 32, 128);
     verification.blacklistedProtocols.clear();
     verification.blacklistedProtocols.addAll(generalConfig.getIntList("verification.blacklisted-protocols"));
 
@@ -229,6 +238,16 @@ public final class SonarConfiguration {
     webhook.embed.r = webhookConfig.getInt("webhook.embed.color.red");
     webhook.embed.g = webhookConfig.getInt("webhook.embed.color.green");
     webhook.embed.b = webhookConfig.getInt("webhook.embed.color.blue");
+    webhook.startEmbedEnabled = webhookConfig.getBoolean("webhook.attack-start-embed.enabled");
+    webhook.startEmbed.title = webhookConfig.getString("webhook.attack-start-embed.title");
+    webhook.startEmbed.titleUrl = webhookConfig.getString("webhook.attack-start-embed.title-url");
+    webhook.startEmbed.description = String.join("\n", webhookConfig.getStringList("webhook.attack-start-embed.description"));
+    webhook.startEmbed.r = webhookConfig.getInt("webhook.attack-start-embed.color.red");
+    webhook.startEmbed.g = webhookConfig.getInt("webhook.attack-start-embed.color.green");
+    webhook.startEmbed.b = webhookConfig.getInt("webhook.attack-start-embed.color.blue");
+
+    final String genericWebhookUrl = webhookConfig.getString("generic-webhook.url").trim();
+    webhook.genericWebhook = genericWebhookUrl.isEmpty() ? null : new GenericWebhook(genericWebhookUrl);
 
     if (!webhook.url.isEmpty()) {
       if (webhook.username.isEmpty()) {
@@ -279,8 +298,32 @@ public final class SonarConfiguration {
     verification.protocolBlacklisted = deserializeDisconnectMessage("verification.blacklisted-protocol");
     verification.verificationSuccess = deserializeDisconnectMessage("verification.success");
     verification.verificationFailed = deserializeDisconnectMessage("verification.failed");
+    verification.serverListPingRequired = deserializeDisconnectMessage("verification.server-list-ping-required");
 
     verboseAnimation = Collections.unmodifiableList(messagesConfig.getStringList("verbose.animation"));
+  }
+
+  /**
+   * Parses all allowlist entries; invalid entries are skipped and reported in the console.
+   */
+  private void loadAllowlist() {
+    final List<SubnetRange> ranges = new ArrayList<>();
+    for (final String raw : generalConfig.getStringList("general.allowlist")) {
+      final SubnetRange range = SubnetRange.parse(raw);
+      if (range == null) {
+        Sonar.get0().getLogger().error("Invalid allowlist entry '{}' (expected an IP address or CIDR range)", raw);
+        continue;
+      }
+      // A prefix of 0 matches every address, which would disable the entire protection
+      if (range.getPrefixLength() == 0) {
+        Sonar.get0().getLogger().warn("The allowlist entry '{}' matches EVERY address and disables Sonar!", raw);
+      }
+      ranges.add(range);
+    }
+    allowlist = Collections.unmodifiableList(ranges);
+    if (!allowlist.isEmpty()) {
+      Sonar.get0().getLogger().info("Loaded {} allowlist entries.", allowlist.size());
+    }
   }
 
   private @NotNull Component deserializeDisconnectMessage(final String path) {
@@ -334,6 +377,8 @@ public final class SonarConfiguration {
   @Getter
   private int maxOnlinePerIp;
   @Getter
+  private List<SubnetRange> allowlist = Collections.emptyList();
+  @Getter
   private int minPlayersForAttack;
   @Getter
   private int minAttackDuration;
@@ -371,6 +416,7 @@ public final class SonarConfiguration {
     private final Gravity gravity = new Gravity();
     private final Vehicle vehicle = new Vehicle();
     private final Brand brand = new Brand();
+    private final ServerListPing serverListPing = new ServerListPing();
 
     @Getter
     public static final class Map {
@@ -395,6 +441,12 @@ public final class SonarConfiguration {
     public static final class Vehicle {
       private Timing timing;
       private int minimumPackets;
+    }
+
+    @Getter
+    public static final class ServerListPing {
+      private Timing timing;
+      private int maxAge;
     }
 
     @Getter
@@ -436,6 +488,8 @@ public final class SonarConfiguration {
     private int rememberTime;
     private int blacklistTime;
     private int blacklistThreshold;
+    private int blacklistIpv4Prefix;
+    private int blacklistIpv6Prefix;
     private final Collection<Integer> blacklistedProtocols = new HashSet<>(0);
 
     private Component tooFastReconnect;
@@ -448,6 +502,7 @@ public final class SonarConfiguration {
     private Component protocolBlacklisted;
     private Component currentlyPreparing;
     private Component unsupportedVersion;
+    private Component serverListPingRequired;
   }
 
   @Getter
@@ -497,6 +552,7 @@ public final class SonarConfiguration {
 
     private Type type;
     private int maximumAge;
+    private boolean persistBlacklist;
   }
 
   @Getter
@@ -517,6 +573,8 @@ public final class SonarConfiguration {
     }
 
     private final Embed embed = new Embed();
+    private final Embed startEmbed = new Embed();
+    private boolean startEmbedEnabled;
 
     @Getter
     @NoArgsConstructor
@@ -531,5 +589,7 @@ public final class SonarConfiguration {
 
     @Getter
     private @Nullable DiscordWebhook discordWebhook;
+    @Getter
+    private @Nullable GenericWebhook genericWebhook;
   }
 }

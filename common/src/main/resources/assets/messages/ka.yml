@@ -238,6 +238,12 @@ verification:
     - <red>გთხოვთ დაიცადოთ რამდენიმე წუთი, რომ ისევ შეგეძლოთ სერვერზე შემოსვლა.
     - <gold>შეცდომა? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # გავარდნის მესიჯი რომელიც არის ნაჩვენები როცა ვინმე შემოვა არასწორი სახელით
   invalid-username:
     - <header>

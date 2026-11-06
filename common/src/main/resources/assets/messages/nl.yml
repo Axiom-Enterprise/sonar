@@ -238,6 +238,12 @@ verification:
     - <red>Wacht een paar minuten voordat u weer verbinding kunt maken met de server.
     - <gold>Vals positief? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Verbindingsbericht dat wordt weergegeven wanneer iemand zich aanmeldt met een ongeldige gebruikersnaam
   invalid-username:
     - <header>

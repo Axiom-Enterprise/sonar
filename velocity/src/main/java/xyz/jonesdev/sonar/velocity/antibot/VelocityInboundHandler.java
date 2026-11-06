@@ -33,8 +33,11 @@ final class VelocityInboundHandler extends InboundHandlerAdapter {
   @Override
   public void channelRead(final @NotNull ChannelHandlerContext ctx, final Object msg) throws Exception {
     if (msg instanceof HandshakePacket handshake) {
-      // We don't care about server pings; remove the handler
+      // Remember the server ping for the server list ping check, then remove the handler
       if (handshake.getNextStatus() == STATUS) {
+        final MinecraftConnection minecraftConnection = ctx.pipeline().get(MinecraftConnection.class);
+        handleStatusHandshake(minecraftConnection != null
+          ? minecraftConnection.getRemoteAddress() : ctx.channel().remoteAddress());
         ctx.pipeline().remove(this);
       } else {
         handleHandshake(ctx, handshake.getServerAddress(), handshake.getProtocolVersion().getProtocol());

@@ -238,6 +238,12 @@ verification:
     - <red>Attendi qualche minuto prima di poter rientrare.
     - <gold>Falso positivo? <gray><support-url>
     - <footer>
+  # Messaggio di disconnessione mostrato a chi entra senza aver aggiornato prima la lista server
+  server-list-ping-required:
+    - <header>
+    - <gold>Aggiungi il server alla lista server e aggiornala prima di entrare.
+    - <gray>Le connessioni dirette al momento non sono consentite.
+    - <footer>
   # Disconnect message that is shown when someone joins with an invalid username
   invalid-username:
     - <header>
