@@ -238,6 +238,12 @@ verification:
     - <red>Silakan tunggu beberapa menit agar bisa bergabung ke server lagi.
     - <gold>Positif palsu? <gray><support-url>
     - <footer>
+  # Disconnect message that is shown when someone joins without pinging the server list first
+  server-list-ping-required:
+    - <header>
+    - <gold>Please add the server to your server list and refresh it before joining.
+    - <gray>Direct connections are currently not allowed.
+    - <footer>
   # Pesan putus yang ditampilkan saat seseorang bergabung dengan username yang tidak valid
   invalid-username:
     - <header>

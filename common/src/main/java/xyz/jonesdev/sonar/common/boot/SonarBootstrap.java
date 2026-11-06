@@ -31,6 +31,7 @@ import xyz.jonesdev.sonar.api.SonarPlatform;
 import xyz.jonesdev.sonar.api.SonarSupplier;
 import xyz.jonesdev.sonar.api.command.subcommand.SubcommandRegistry;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
+import xyz.jonesdev.sonar.api.database.controller.BlacklistController;
 import xyz.jonesdev.sonar.api.database.controller.VerifiedPlayerController;
 import xyz.jonesdev.sonar.api.notification.ActionBarNotificationHandler;
 import xyz.jonesdev.sonar.api.notification.ChatNotificationHandler;
@@ -57,6 +58,7 @@ public abstract class SonarBootstrap<T> implements Sonar {
   private ChatNotificationHandler chatNotificationHandler;
   private SonarConfiguration config;
   private VerifiedPlayerController verifiedPlayerController;
+  private BlacklistController blacklistController;
   private final LibraryManager libraryManager;
   private final SonarStatistics statistics;
   private final SonarPlatform platform;
@@ -170,12 +172,34 @@ public abstract class SonarBootstrap<T> implements Sonar {
       }
     }
 
+    // Update the server list ping cache
+    final long serverListPingMaxAge = getConfig().getVerification().getServerListPing().getMaxAge();
+    if (getAntiBot().getServerListPings() == null || getAntiBot().getServerListPingMaxAge() != serverListPingMaxAge) {
+      getAntiBot().setServerListPings(Caffeine.newBuilder()
+        .expireAfterWrite(Duration.ofMillis(serverListPingMaxAge))
+        .ticker(Ticker.systemTicker())
+        // Limit the size since bots could flood the server with pings
+        .maximumSize(250_000L)
+        .build());
+      getAntiBot().setServerListPingMaxAge(serverListPingMaxAge);
+    }
+
+    // Stop the blacklist controller before its database connection is closed
+    if (blacklistController != null) {
+      blacklistController.close();
+    }
+
     // Reinitialize database controller
     if (verifiedPlayerController != null) {
       // Close the old connection first
       verifiedPlayerController.close();
     }
     verifiedPlayerController = new VerifiedPlayerController(libraryManager);
+
+    // Reinitialize the persistent blacklist (shares the connection of the verified players)
+    blacklistController = new BlacklistController(getConfig().getDatabase().isPersistBlacklist()
+      ? verifiedPlayerController.getConnectionSource() : null);
+    blacklistController.load(getAntiBot().getBlacklist(), blacklistTime);
   }
 
   public final void shutdown() {
@@ -183,6 +207,10 @@ public abstract class SonarBootstrap<T> implements Sonar {
     getLogger().info("Starting shutdown process...");
     // Interrupt threads
     ScheduledServiceManager.stop();
+    // Stop the blacklist controller before closing the database connection
+    if (blacklistController != null) {
+      blacklistController.close();
+    }
     // Close database connection if present
     if (verifiedPlayerController != null) {
       verifiedPlayerController.close();

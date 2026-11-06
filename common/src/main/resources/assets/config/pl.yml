@@ -23,6 +23,11 @@ general:
   log-player-addresses: true
   # Maksymalna liczba graczy online z tym samym adresem IP
   max-online-per-ip: 3
+  # IP addresses or CIDR ranges that always skip the verification, the rate limit and the blacklist
+  # Useful for staff members, monitoring services or trusted backend servers
+  # Example: ['127.0.0.1', '10.0.0.0/8', '2001:db8::/32']
+  # Never add a range like '0.0.0.0/0' since this would disable Sonar completely
+  allowlist: []
 
 # Ustawienia czułości dla funkcji śledzenia ataku
 # Edytuj to tylko wtedy, gdy wiesz, co robisz
@@ -59,6 +64,9 @@ database:
   password: ''
   # Przez ile dni Sonar powinien przechowywać zweryfikowanych graczy w bazie danych?
   maximum-age: 5
+  # Should Sonar store the blacklist in the database, so it survives restarts?
+  # This only works if a database type other than NONE is configured
+  persist-blacklist: true
 
 # Każde nowe logowanie będzie kolejkowane w celu uniknięcia ataków typu spam join.
 # Kolejka jest aktualizowana co 1 sekundę (20 tików).
@@ -127,6 +135,18 @@ verification:
       # Should Sonar place the map in the player's offhand?
       # This only works on Minecraft 1.9 and above.
       place-in-offhand: false
+
+    # Checks if the player requested the server list (ping) before joining the server
+    # Many bots connect directly without ever pinging the server like a real client would
+    # Players using direct connect have to refresh the server list once before joining
+    # Possible types: NEVER, DURING_ATTACK, ALWAYS
+    # - NEVER: Players never have to ping the server before joining
+    # - DURING_ATTACK: Players only have to ping the server during an attack
+    # - ALWAYS: Players always have to ping the server before joining
+    server-list-ping:
+      timing: DURING_ATTACK
+      # How long (in milliseconds) a server list ping is valid
+      max-age: 60000
 
     # Sprawdza, czy gracz wysyła prawidłowy client brand do serwera.
     client-brand:
@@ -219,6 +239,14 @@ verification:
   # Jak często gracz ma nie przechodzić weryfikacji, aby znaleźć się na czarnej liście?
   # (Ustaw tę wartość na 0, aby całkowicie wyłączyć czarną listę).
   blacklist-threshold: 2
+  # Size of the network (prefix length) that shares the same blacklist entry
+  # Attackers can easily rotate their IPv6 addresses inside the same /64 network,
+  # so grouping them makes the blacklist effective against IPv6 botnets
+  # Lower values block more addresses at once, but may affect legitimate players behind the same network
+  # IPv4: 32 = single address (recommended), 24 = whole /24 network (8-32)
+  blacklist-ipv4-prefix: 32
+  # IPv6: 64 = whole /64 network (recommended), 128 = single address (32-128)
+  blacklist-ipv6-prefix: 64
   # Lista protokołów, które nie mogą w ogóle dołączyć do serwera
   # Pełną listę wszystkich protokołów można znaleźć tutaj:
   # https://wiki.vg/Protocol_version_numbers

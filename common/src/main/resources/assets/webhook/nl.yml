@@ -58,3 +58,31 @@ webhook:
       red: 0
       green: 255
       blue: 0
+  # Embed Discord webhook message that is sent when an attack has been detected
+  attack-start-embed:
+    # Should Sonar also send a message when an attack starts?
+    enabled: true
+    # Title of the Discord webhook embed
+    title: ':warning: Attack detected'
+    # Clickable URL of the title of the Discord webhook embed
+    title-url: ''
+    # Description (content) of the Discord webhook embed
+    description:
+      - Sonar has detected an attack on your server.
+      - ''
+      - 'Attack start: <t:<start-timestamp>:T>'
+      - 'Bots per second: <bps>'
+      - 'Connections per second: <cps>'
+      - 'Verifying players: <verifying>'
+      - 'Queued players: <queued>'
+    # RGB colors of the Discord webhook embed
+    color:
+      red: 255
+      green: 165
+      blue: 0
+
+# Attack notifications can also be sent as plain JSON to any HTTP(S) endpoint
+# Body: {"event": "attack_start" | "attack_end", "timestamp": <unix seconds>, "data": {...}}
+generic-webhook:
+  # URL of the endpoint (Set this to '' to disable the generic webhook)
+  url: ''
