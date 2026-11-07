@@ -111,6 +111,40 @@ commands:
     # Message shown when someone removes an IP address from the blacklist, but it is not blacklisted
     ip-not-found: '<prefix>L''indirizzo IP fornito non è in blacklist.'
 
+  # Translations for '/sonar lockdown'
+  lockdown:
+    # Description for this subcommand
+    description: "Blocca temporaneamente tutti i giocatori non verificati"
+    # Message shown when someone enables the lockdown
+    enabled: '<prefix><red>Lockdown attivato per <minutes> minuto/i. Possono entrare solo i giocatori verificati.'
+    # Message shown when someone disables the lockdown
+    disabled: '<prefix><green>Lockdown disattivato. I nuovi giocatori possono di nuovo entrare.'
+    # Message shown when someone checks the lockdown status while it is active
+    status-active: '<prefix>Il lockdown resterà attivo per altri <minutes> minuto/i.'
+    # Message shown when someone checks the lockdown status while it is not active
+    status-inactive: '<prefix>Il lockdown al momento non è attivo.'
+    # Message shown when someone provides an invalid duration
+    invalid-duration: '<prefix><red>La durata deve essere un numero di minuti tra 1 e 10080.'
+
+  # Translations for '/sonar allowlist'
+  allowlist:
+    # Description for this subcommand
+    description: "Gestisci gli indirizzi IP e le reti che saltano la verifica"
+    # Message shown when someone adds an entry to the allowlist
+    add: '<prefix><entry> è stato aggiunto alla allowlist.'
+    # Message shown when someone removes an entry from the allowlist
+    remove: '<prefix><entry> è stato rimosso dalla allowlist.'
+    # Message shown when someone adds an entry that is already on the allowlist
+    duplicate: '<prefix>Questa voce è già presente nella allowlist.'
+    # Message shown when someone removes an entry that is not on the allowlist
+    not-found: '<prefix>Questa voce non è presente nella allowlist.'
+    # Message shown when someone provides an invalid IP address or CIDR range
+    invalid: '<prefix><red>Inserisci un indirizzo IP o una rete CIDR valida (es. 10.0.0.0/8).'
+    # Message shown when someone lists the allowlist but it is empty
+    empty: '<prefix>La allowlist al momento è vuota.'
+    # Message shown when someone lists the allowlist
+    list: '<prefix>Allowlist (<amount>): <gray><entries>'
+
   # Translations for '/sonar verified'
   verified:
     # Descrizione di questo sottocomando
@@ -243,6 +277,23 @@ verification:
     - <header>
     - <gold>Aggiungi il server alla lista server e aggiornala prima di entrare.
     - <gray>Le connessioni dirette al momento non sono consentite.
+    - <footer>
+  # Disconnect message that is shown when someone connects using a hostname that is not allowed
+  invalid-hostname:
+    - <header>
+    - <red>Connettiti usando l'indirizzo ufficiale del server.
+    - <footer>
+  # Disconnect message that is shown when someone's username matches a blocked pattern during an attack
+  name-pattern-blocked:
+    - <header>
+    - <red>Troppi giocatori con un nome simile stanno entrando in questo momento.
+    - <gray>Riprova tra qualche minuto.
+    - <footer>
+  # Disconnect message that is shown when an unverified player joins during a lockdown
+  lockdown:
+    - <header>
+    - <red>Il server al momento non accetta nuovi giocatori.
+    - <gray>Riprova più tardi.
     - <footer>
   # Disconnect message that is shown when someone joins with an invalid username
   invalid-username:

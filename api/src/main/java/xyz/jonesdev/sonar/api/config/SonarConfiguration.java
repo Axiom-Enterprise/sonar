@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public final class SonarConfiguration {
   private final SimpleYamlConfig generalConfig;
@@ -143,12 +144,25 @@ public final class SonarConfiguration {
     logPlayerAddresses = generalConfig.getBoolean("general.log-player-addresses");
     maxOnlinePerIp = clamp(generalConfig.getInt("general.max-online-per-ip"), -1, 99);
     loadAllowlist();
+    serverListRateLimitMaxPings = clamp(generalConfig.getInt("general.server-list-rate-limit.max-pings"), 0, 1000);
+    serverListRateLimitWindow = clamp(generalConfig.getInt("general.server-list-rate-limit.window"), 1000, 600000);
+
+    // Lockdown
+    lockdownDefaultDuration = clamp(generalConfig.getInt("lockdown.default-duration"), 1, 10080);
+
+    // Metrics
+    metrics.enabled = generalConfig.getBoolean("metrics.enabled");
+    metrics.host = generalConfig.getString("metrics.host");
+    metrics.port = clamp(generalConfig.getInt("metrics.port"), 1, 65535);
+    metrics.token = generalConfig.getString("metrics.token");
 
     // Attack tracker
     minPlayersForAttack = clamp(generalConfig.getInt("attack-tracker.min-players-for-attack"), 2, 1024);
     minAttackDuration = clamp(generalConfig.getInt("attack-tracker.min-attack-duration"), 1000, 900000);
     minAttackThreshold = clamp(generalConfig.getInt("attack-tracker.min-attack-threshold"), 0, 20);
     attackCooldownDelay = clamp(generalConfig.getInt("attack-tracker.attack-cooldown-delay"), 100, 30000);
+    adaptiveAttackDetection = generalConfig.getBoolean("attack-tracker.adaptive.enabled");
+    adaptiveAttackMultiplier = Math.min(Math.max(generalConfig.getDouble("attack-tracker.adaptive.multiplier"), 1D), 100D);
 
     // Database
     database.type = Database.Type.valueOf(generalConfig.getString("database.type").toUpperCase());
@@ -198,6 +212,17 @@ public final class SonarConfiguration {
 
     verification.serverListPing.timing = Verification.Timing.valueOf(generalConfig.getString("verification.checks.server-list-ping.timing"));
     verification.serverListPing.maxAge = clamp(generalConfig.getInt("verification.checks.server-list-ping.max-age"), 1000, 3600000);
+
+    verification.hostname.enabled = generalConfig.getBoolean("verification.checks.hostname.enabled");
+    verification.hostname.allowed = Collections.unmodifiableList(generalConfig.getStringList("verification.checks.hostname.allowed")
+      .stream()
+      .map(hostname -> hostname.trim().toLowerCase(Locale.ROOT))
+      .filter(hostname -> !hostname.isEmpty())
+      .collect(Collectors.toList()));
+
+    verification.namePattern.enabled = generalConfig.getBoolean("verification.checks.name-pattern.enabled");
+    verification.namePattern.threshold = clamp(generalConfig.getInt("verification.checks.name-pattern.threshold"), 2, 1000);
+    verification.namePattern.window = clamp(generalConfig.getInt("verification.checks.name-pattern.window"), 1000, 600000);
 
     verification.brand.enabled = generalConfig.getBoolean("verification.checks.client-brand.enabled");
     verification.brand.validRegex = Pattern.compile(generalConfig.getString("verification.checks.client-brand.valid-regex"));
@@ -298,6 +323,9 @@ public final class SonarConfiguration {
     verification.verificationSuccess = deserializeDisconnectMessage("verification.success");
     verification.verificationFailed = deserializeDisconnectMessage("verification.failed");
     verification.serverListPingRequired = deserializeDisconnectMessage("verification.server-list-ping-required");
+    verification.invalidHostname = deserializeDisconnectMessage("verification.invalid-hostname");
+    verification.namePatternBlocked = deserializeDisconnectMessage("verification.name-pattern-blocked");
+    verification.lockdown = deserializeDisconnectMessage("verification.lockdown");
 
     verboseAnimation = Collections.unmodifiableList(messagesConfig.getStringList("verbose.animation"));
   }
@@ -323,6 +351,52 @@ public final class SonarConfiguration {
     if (!allowlist.isEmpty()) {
       Sonar.get0().getLogger().info("Loaded {} allowlist entries.", allowlist.size());
     }
+  }
+
+  /**
+   * Adds an entry to the allowlist, saves it to the configuration file and applies it immediately.
+   *
+   * @param raw The IP address or CIDR range as typed by the user
+   * @return {@code false} if the entry is invalid or already on the allowlist
+   * @throws Exception if the configuration file could not be saved
+   */
+  public synchronized boolean addToAllowlist(final @NotNull String raw) throws Exception {
+    final SubnetRange range = SubnetRange.parse(raw);
+    if (range == null || allowlist.contains(range)) {
+      return false;
+    }
+    final List<String> entries = generalConfig.getStringList("general.allowlist");
+    entries.add(raw.trim());
+    saveAllowlist(entries);
+    return true;
+  }
+
+  /**
+   * Removes every entry that describes the same network as the given one,
+   * saves the configuration file and applies the change immediately.
+   *
+   * @param raw The IP address or CIDR range as typed by the user
+   * @return {@code false} if the entry is invalid or not on the allowlist
+   * @throws Exception if the configuration file could not be saved
+   */
+  public synchronized boolean removeFromAllowlist(final @NotNull String raw) throws Exception {
+    final SubnetRange range = SubnetRange.parse(raw);
+    if (range == null) {
+      return false;
+    }
+    final List<String> entries = generalConfig.getStringList("general.allowlist");
+    // Entries are compared by their network, so "10.0.0.1/8" also removes "10.0.0.0/8"
+    if (!entries.removeIf(entry -> range.equals(SubnetRange.parse(entry)))) {
+      return false;
+    }
+    saveAllowlist(entries);
+    return true;
+  }
+
+  private void saveAllowlist(final @NotNull List<String> entries) throws Exception {
+    generalConfig.set("general.allowlist", entries);
+    generalConfig.save();
+    loadAllowlist();
   }
 
   private @NotNull Component deserializeDisconnectMessage(final String path) {
@@ -373,8 +447,40 @@ public final class SonarConfiguration {
   private int minAttackDuration;
   private int minAttackThreshold;
   private int attackCooldownDelay;
+  private boolean adaptiveAttackDetection;
+  private double adaptiveAttackMultiplier;
+  private int serverListRateLimitMaxPings;
+  private int serverListRateLimitWindow;
+  private int lockdownDefaultDuration;
+  private final Metrics metrics = new Metrics();
   private Component tooManyOnlinePerIp;
   private List<String> verboseAnimation;
+
+  public static final class Metrics {
+    private boolean enabled;
+    private String host;
+    private int port;
+    private String token;
+
+    public boolean isEnabled() {
+      return this.enabled;
+    }
+
+    public String getHost() {
+      return this.host;
+    }
+
+    public int getPort() {
+      return this.port;
+    }
+
+    public String getToken() {
+      return this.token;
+    }
+
+    private Metrics() {
+    }
+  }
 
   public static final class Queue {
     private int maxQueuePolls;
@@ -411,6 +517,8 @@ public final class SonarConfiguration {
     private final Vehicle vehicle = new Vehicle();
     private final Brand brand = new Brand();
     private final ServerListPing serverListPing = new ServerListPing();
+    private final Hostname hostname = new Hostname();
+    private final NamePattern namePattern = new NamePattern();
 
     public static final class Map {
       private Timing timing;
@@ -499,6 +607,38 @@ public final class SonarConfiguration {
       }
     }
 
+    public static final class Hostname {
+      private boolean enabled;
+      // Lower case hostnames; entries starting with "*." allow all subdomains
+      private List<String> allowed = Collections.emptyList();
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public List<String> getAllowed() {
+        return this.allowed;
+      }
+    }
+
+    public static final class NamePattern {
+      private boolean enabled;
+      private int threshold;
+      private int window;
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public int getThreshold() {
+        return this.threshold;
+      }
+
+      public int getWindow() {
+        return this.window;
+      }
+    }
+
     public static final class Brand {
       private boolean enabled;
       private int maxLength;
@@ -570,6 +710,9 @@ public final class SonarConfiguration {
     private Component currentlyPreparing;
     private Component unsupportedVersion;
     private Component serverListPingRequired;
+    private Component invalidHostname;
+    private Component namePatternBlocked;
+    private Component lockdown;
 
     public Timing getTiming() {
       return this.timing;
@@ -593,6 +736,14 @@ public final class SonarConfiguration {
 
     public ServerListPing getServerListPing() {
       return this.serverListPing;
+    }
+
+    public Hostname getHostname() {
+      return this.hostname;
+    }
+
+    public NamePattern getNamePattern() {
+      return this.namePattern;
     }
 
     public Gamemode getGamemode() {
@@ -709,6 +860,18 @@ public final class SonarConfiguration {
 
     public Component getServerListPingRequired() {
       return this.serverListPingRequired;
+    }
+
+    public Component getInvalidHostname() {
+      return this.invalidHostname;
+    }
+
+    public Component getNamePatternBlocked() {
+      return this.namePatternBlocked;
+    }
+
+    public Component getLockdown() {
+      return this.lockdown;
     }
 
     private Verification() {
@@ -986,6 +1149,30 @@ public final class SonarConfiguration {
 
   public List<SubnetRange> getAllowlist() {
     return this.allowlist;
+  }
+
+  public boolean isAdaptiveAttackDetection() {
+    return this.adaptiveAttackDetection;
+  }
+
+  public double getAdaptiveAttackMultiplier() {
+    return this.adaptiveAttackMultiplier;
+  }
+
+  public int getServerListRateLimitMaxPings() {
+    return this.serverListRateLimitMaxPings;
+  }
+
+  public int getServerListRateLimitWindow() {
+    return this.serverListRateLimitWindow;
+  }
+
+  public int getLockdownDefaultDuration() {
+    return this.lockdownDefaultDuration;
+  }
+
+  public Metrics getMetrics() {
+    return this.metrics;
   }
 
   public int getMinPlayersForAttack() {
