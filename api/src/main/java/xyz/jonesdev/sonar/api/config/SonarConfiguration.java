@@ -19,7 +19,6 @@ package xyz.jonesdev.sonar.api.config;
 
 import com.alessiodp.libby.Library;
 import com.j256.ormlite.db.DatabaseType;
-import lombok.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -45,13 +44,14 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public final class SonarConfiguration {
-  @Getter
-  private final SimpleYamlConfig generalConfig, messagesConfig, webhookConfig;
-  @Getter
-  private final File languageFile, pluginFolder;
-  @Getter
+  private final SimpleYamlConfig generalConfig;
+  private final SimpleYamlConfig messagesConfig;
+  private final SimpleYamlConfig webhookConfig;
+  private final File languageFile;
+  private final File pluginFolder;
   private Language language;
 
   public SonarConfiguration(final @NotNull File pluginFolder) {
@@ -144,12 +144,25 @@ public final class SonarConfiguration {
     logPlayerAddresses = generalConfig.getBoolean("general.log-player-addresses");
     maxOnlinePerIp = clamp(generalConfig.getInt("general.max-online-per-ip"), -1, 99);
     loadAllowlist();
+    serverListRateLimitMaxPings = clamp(generalConfig.getInt("general.server-list-rate-limit.max-pings"), 0, 1000);
+    serverListRateLimitWindow = clamp(generalConfig.getInt("general.server-list-rate-limit.window"), 1000, 600000);
+
+    // Lockdown
+    lockdownDefaultDuration = clamp(generalConfig.getInt("lockdown.default-duration"), 1, 10080);
+
+    // Metrics
+    metrics.enabled = generalConfig.getBoolean("metrics.enabled");
+    metrics.host = generalConfig.getString("metrics.host");
+    metrics.port = clamp(generalConfig.getInt("metrics.port"), 1, 65535);
+    metrics.token = generalConfig.getString("metrics.token");
 
     // Attack tracker
     minPlayersForAttack = clamp(generalConfig.getInt("attack-tracker.min-players-for-attack"), 2, 1024);
     minAttackDuration = clamp(generalConfig.getInt("attack-tracker.min-attack-duration"), 1000, 900000);
     minAttackThreshold = clamp(generalConfig.getInt("attack-tracker.min-attack-threshold"), 0, 20);
     attackCooldownDelay = clamp(generalConfig.getInt("attack-tracker.attack-cooldown-delay"), 100, 30000);
+    adaptiveAttackDetection = generalConfig.getBoolean("attack-tracker.adaptive.enabled");
+    adaptiveAttackMultiplier = Math.min(Math.max(generalConfig.getDouble("attack-tracker.adaptive.multiplier"), 1D), 100D);
 
     // Database
     database.type = Database.Type.valueOf(generalConfig.getString("database.type").toUpperCase());
@@ -199,6 +212,17 @@ public final class SonarConfiguration {
 
     verification.serverListPing.timing = Verification.Timing.valueOf(generalConfig.getString("verification.checks.server-list-ping.timing"));
     verification.serverListPing.maxAge = clamp(generalConfig.getInt("verification.checks.server-list-ping.max-age"), 1000, 3600000);
+
+    verification.hostname.enabled = generalConfig.getBoolean("verification.checks.hostname.enabled");
+    verification.hostname.allowed = Collections.unmodifiableList(generalConfig.getStringList("verification.checks.hostname.allowed")
+      .stream()
+      .map(hostname -> hostname.trim().toLowerCase(Locale.ROOT))
+      .filter(hostname -> !hostname.isEmpty())
+      .collect(Collectors.toList()));
+
+    verification.namePattern.enabled = generalConfig.getBoolean("verification.checks.name-pattern.enabled");
+    verification.namePattern.threshold = clamp(generalConfig.getInt("verification.checks.name-pattern.threshold"), 2, 1000);
+    verification.namePattern.window = clamp(generalConfig.getInt("verification.checks.name-pattern.window"), 1000, 600000);
 
     verification.brand.enabled = generalConfig.getBoolean("verification.checks.client-brand.enabled");
     verification.brand.validRegex = Pattern.compile(generalConfig.getString("verification.checks.client-brand.valid-regex"));
@@ -299,6 +323,9 @@ public final class SonarConfiguration {
     verification.verificationSuccess = deserializeDisconnectMessage("verification.success");
     verification.verificationFailed = deserializeDisconnectMessage("verification.failed");
     verification.serverListPingRequired = deserializeDisconnectMessage("verification.server-list-ping-required");
+    verification.invalidHostname = deserializeDisconnectMessage("verification.invalid-hostname");
+    verification.namePatternBlocked = deserializeDisconnectMessage("verification.name-pattern-blocked");
+    verification.lockdown = deserializeDisconnectMessage("verification.lockdown");
 
     verboseAnimation = Collections.unmodifiableList(messagesConfig.getStringList("verbose.animation"));
   }
@@ -324,6 +351,52 @@ public final class SonarConfiguration {
     if (!allowlist.isEmpty()) {
       Sonar.get0().getLogger().info("Loaded {} allowlist entries.", allowlist.size());
     }
+  }
+
+  /**
+   * Adds an entry to the allowlist, saves it to the configuration file and applies it immediately.
+   *
+   * @param raw The IP address or CIDR range as typed by the user
+   * @return {@code false} if the entry is invalid or already on the allowlist
+   * @throws Exception if the configuration file could not be saved
+   */
+  public synchronized boolean addToAllowlist(final @NotNull String raw) throws Exception {
+    final SubnetRange range = SubnetRange.parse(raw);
+    if (range == null || allowlist.contains(range)) {
+      return false;
+    }
+    final List<String> entries = generalConfig.getStringList("general.allowlist");
+    entries.add(raw.trim());
+    saveAllowlist(entries);
+    return true;
+  }
+
+  /**
+   * Removes every entry that describes the same network as the given one,
+   * saves the configuration file and applies the change immediately.
+   *
+   * @param raw The IP address or CIDR range as typed by the user
+   * @return {@code false} if the entry is invalid or not on the allowlist
+   * @throws Exception if the configuration file could not be saved
+   */
+  public synchronized boolean removeFromAllowlist(final @NotNull String raw) throws Exception {
+    final SubnetRange range = SubnetRange.parse(raw);
+    if (range == null) {
+      return false;
+    }
+    final List<String> entries = generalConfig.getStringList("general.allowlist");
+    // Entries are compared by their network, so "10.0.0.1/8" also removes "10.0.0.0/8"
+    if (!entries.removeIf(entry -> range.equals(SubnetRange.parse(entry)))) {
+      return false;
+    }
+    saveAllowlist(entries);
+    return true;
+  }
+
+  private void saveAllowlist(final @NotNull List<String> entries) throws Exception {
+    generalConfig.set("general.allowlist", entries);
+    generalConfig.save();
+    loadAllowlist();
   }
 
   private @NotNull Component deserializeDisconnectMessage(final String path) {
@@ -357,59 +430,86 @@ public final class SonarConfiguration {
     return logPlayerAddresses ? inetAddress.getHostAddress() : "<ip address withheld>";
   }
 
-  @Getter
   private final Queue queue = new Queue();
-  @Getter
   private final Verification verification = new Verification();
-  @Getter
   private final Database database = new Database();
-  @Getter
   private final Webhook webhook = new Webhook();
 
-  @Getter
   private Component prefix;
   private String supportUrl;
   private Component header;
   private Component footer;
-  @Getter
   private Component noPermission;
   private boolean logPlayerAddresses;
-  @Getter
   private int maxOnlinePerIp;
-  @Getter
   private List<SubnetRange> allowlist = Collections.emptyList();
-  @Getter
   private int minPlayersForAttack;
-  @Getter
   private int minAttackDuration;
-  @Getter
   private int minAttackThreshold;
-  @Getter
   private int attackCooldownDelay;
-  @Getter
+  private boolean adaptiveAttackDetection;
+  private double adaptiveAttackMultiplier;
+  private int serverListRateLimitMaxPings;
+  private int serverListRateLimitWindow;
+  private int lockdownDefaultDuration;
+  private final Metrics metrics = new Metrics();
   private Component tooManyOnlinePerIp;
-  @Getter
   private List<String> verboseAnimation;
 
-  @Getter
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
-  public static final class Queue {
-    private int maxQueuePolls;
+  public static final class Metrics {
+    private boolean enabled;
+    private String host;
+    private int port;
+    private String token;
+
+    public boolean isEnabled() {
+      return this.enabled;
+    }
+
+    public String getHost() {
+      return this.host;
+    }
+
+    public int getPort() {
+      return this.port;
+    }
+
+    public String getToken() {
+      return this.token;
+    }
+
+    private Metrics() {
+    }
   }
 
-  @Getter
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
+  public static final class Queue {
+    private int maxQueuePolls;
+
+    public int getMaxQueuePolls() {
+      return this.maxQueuePolls;
+    }
+
+    private Queue() {
+    }
+  }
+
   public static final class Verification {
     private Timing timing;
 
-    @Getter
-    @RequiredArgsConstructor
     public enum Timing {
       ALWAYS("Always"),
       DURING_ATTACK("During Attack"),
       NEVER("Never");
 
       private final String displayName;
+
+      public String getDisplayName() {
+        return this.displayName;
+      }
+
+      private Timing(final String displayName) {
+        this.displayName = displayName;
+      }
     }
 
     private final Map map = new Map();
@@ -417,8 +517,9 @@ public final class SonarConfiguration {
     private final Vehicle vehicle = new Vehicle();
     private final Brand brand = new Brand();
     private final ServerListPing serverListPing = new ServerListPing();
+    private final Hostname hostname = new Hostname();
+    private final NamePattern namePattern = new NamePattern();
 
-    @Getter
     public static final class Map {
       private Timing timing;
       private int precomputeAmount;
@@ -427,39 +528,137 @@ public final class SonarConfiguration {
       private String alphabet;
       private File backgroundImage;
       private boolean placeInOffhand;
+
+      public Timing getTiming() {
+        return this.timing;
+      }
+
+      public int getPrecomputeAmount() {
+        return this.precomputeAmount;
+      }
+
+      public int getMaxDuration() {
+        return this.maxDuration;
+      }
+
+      public int getMaxTries() {
+        return this.maxTries;
+      }
+
+      public String getAlphabet() {
+        return this.alphabet;
+      }
+
+      public File getBackgroundImage() {
+        return this.backgroundImage;
+      }
+
+      public boolean isPlaceInOffhand() {
+        return this.placeInOffhand;
+      }
     }
 
-    @Getter
     public static final class Gravity {
       private Timing timing;
       private Timing collisionTiming;
       private boolean captchaOnFail;
       private int maxMovementTicks;
+
+      public Timing getTiming() {
+        return this.timing;
+      }
+
+      public Timing getCollisionTiming() {
+        return this.collisionTiming;
+      }
+
+      public boolean isCaptchaOnFail() {
+        return this.captchaOnFail;
+      }
+
+      public int getMaxMovementTicks() {
+        return this.maxMovementTicks;
+      }
     }
 
-    @Getter
     public static final class Vehicle {
       private Timing timing;
       private int minimumPackets;
+
+      public Timing getTiming() {
+        return this.timing;
+      }
+
+      public int getMinimumPackets() {
+        return this.minimumPackets;
+      }
     }
 
-    @Getter
     public static final class ServerListPing {
       private Timing timing;
       private int maxAge;
+
+      public Timing getTiming() {
+        return this.timing;
+      }
+
+      public int getMaxAge() {
+        return this.maxAge;
+      }
     }
 
-    @Getter
+    public static final class Hostname {
+      private boolean enabled;
+      // Lower case hostnames; entries starting with "*." allow all subdomains
+      private List<String> allowed = Collections.emptyList();
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public List<String> getAllowed() {
+        return this.allowed;
+      }
+    }
+
+    public static final class NamePattern {
+      private boolean enabled;
+      private int threshold;
+      private int window;
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public int getThreshold() {
+        return this.threshold;
+      }
+
+      public int getWindow() {
+        return this.window;
+      }
+    }
+
     public static final class Brand {
       private boolean enabled;
       private int maxLength;
       private Pattern validRegex;
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public int getMaxLength() {
+        return this.maxLength;
+      }
+
+      public Pattern getValidRegex() {
+        return this.validRegex;
+      }
     }
 
     private Gamemode gamemode;
 
-    @Getter
-    @RequiredArgsConstructor
     public enum Gamemode {
       NOT_SET(-1),
       SURVIVAL(0),
@@ -470,6 +669,14 @@ public final class SonarConfiguration {
 
       public boolean isSurvivalOrAdventure() {
         return this == SURVIVAL || this == ADVENTURE;
+      }
+
+      public int getId() {
+        return this.id;
+      }
+
+      private Gamemode(final int id) {
+        this.id = id;
       }
     }
 
@@ -503,14 +710,176 @@ public final class SonarConfiguration {
     private Component currentlyPreparing;
     private Component unsupportedVersion;
     private Component serverListPingRequired;
+    private Component invalidHostname;
+    private Component namePatternBlocked;
+    private Component lockdown;
+
+    public Timing getTiming() {
+      return this.timing;
+    }
+
+    public Map getMap() {
+      return this.map;
+    }
+
+    public Gravity getGravity() {
+      return this.gravity;
+    }
+
+    public Vehicle getVehicle() {
+      return this.vehicle;
+    }
+
+    public Brand getBrand() {
+      return this.brand;
+    }
+
+    public ServerListPing getServerListPing() {
+      return this.serverListPing;
+    }
+
+    public Hostname getHostname() {
+      return this.hostname;
+    }
+
+    public NamePattern getNamePattern() {
+      return this.namePattern;
+    }
+
+    public Gamemode getGamemode() {
+      return this.gamemode;
+    }
+
+    public int getTimeOfDay() {
+      return this.timeOfDay;
+    }
+
+    public boolean isCheckGeyser() {
+      return this.checkGeyser;
+    }
+
+    public boolean isCheckEagler() {
+      return this.checkEagler;
+    }
+
+    public boolean isLogConnections() {
+      return this.logConnections;
+    }
+
+    public boolean isLogDuringAttack() {
+      return this.logDuringAttack;
+    }
+
+    public boolean isDebugXYZPositions() {
+      return this.debugXYZPositions;
+    }
+
+    public Pattern getValidNameRegex() {
+      return this.validNameRegex;
+    }
+
+    public int getReadTimeout() {
+      return this.readTimeout;
+    }
+
+    public int getWriteTimeout() {
+      return this.writeTimeout;
+    }
+
+    public int getMaxPacketCount() {
+      return this.maxPacketCount;
+    }
+
+    public int getReconnectDelay() {
+      return this.reconnectDelay;
+    }
+
+    public int getRememberTime() {
+      return this.rememberTime;
+    }
+
+    public int getBlacklistTime() {
+      return this.blacklistTime;
+    }
+
+    public int getBlacklistThreshold() {
+      return this.blacklistThreshold;
+    }
+
+    public int getBlacklistIpv4Prefix() {
+      return this.blacklistIpv4Prefix;
+    }
+
+    public int getBlacklistIpv6Prefix() {
+      return this.blacklistIpv6Prefix;
+    }
+
+    public Collection<Integer> getBlacklistedProtocols() {
+      return this.blacklistedProtocols;
+    }
+
+    public Component getTooFastReconnect() {
+      return this.tooFastReconnect;
+    }
+
+    public Component getInvalidUsername() {
+      return this.invalidUsername;
+    }
+
+    public Component getVerificationSuccess() {
+      return this.verificationSuccess;
+    }
+
+    public Component getVerificationFailed() {
+      return this.verificationFailed;
+    }
+
+    public Component getAlreadyVerifying() {
+      return this.alreadyVerifying;
+    }
+
+    public Component getAlreadyQueued() {
+      return this.alreadyQueued;
+    }
+
+    public Component getBlacklisted() {
+      return this.blacklisted;
+    }
+
+    public Component getProtocolBlacklisted() {
+      return this.protocolBlacklisted;
+    }
+
+    public Component getCurrentlyPreparing() {
+      return this.currentlyPreparing;
+    }
+
+    public Component getUnsupportedVersion() {
+      return this.unsupportedVersion;
+    }
+
+    public Component getServerListPingRequired() {
+      return this.serverListPingRequired;
+    }
+
+    public Component getInvalidHostname() {
+      return this.invalidHostname;
+    }
+
+    public Component getNamePatternBlocked() {
+      return this.namePatternBlocked;
+    }
+
+    public Component getLockdown() {
+      return this.lockdown;
+    }
+
+    private Verification() {
+    }
   }
 
-  @Getter
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
   public static final class Database {
 
-    @Getter
-    @RequiredArgsConstructor
     public enum Type {
       MYSQL("MySQL", "jdbc:mysql://%s:%d/%s%s", new MysqlDatabaseTypeAdapter(),
         Library.builder()
@@ -546,17 +915,60 @@ public final class SonarConfiguration {
       private final String connectionString;
       private final DatabaseType databaseType;
       private final Library databaseDriver;
-      @Setter
       private boolean loaded;
+
+      public String getDisplayName() {
+        return this.displayName;
+      }
+
+      public String getConnectionString() {
+        return this.connectionString;
+      }
+
+      public DatabaseType getDatabaseType() {
+        return this.databaseType;
+      }
+
+      public Library getDatabaseDriver() {
+        return this.databaseDriver;
+      }
+
+      public boolean isLoaded() {
+        return this.loaded;
+      }
+
+      private Type(final String displayName, final String connectionString, final DatabaseType databaseType, final Library databaseDriver) {
+        this.displayName = displayName;
+        this.connectionString = connectionString;
+        this.databaseType = databaseType;
+        this.databaseDriver = databaseDriver;
+      }
+
+      public void setLoaded(final boolean loaded) {
+        this.loaded = loaded;
+      }
     }
 
     private Type type;
     private int maximumAge;
     private boolean persistBlacklist;
+
+    public Type getType() {
+      return this.type;
+    }
+
+    public int getMaximumAge() {
+      return this.maximumAge;
+    }
+
+    public boolean isPersistBlacklist() {
+      return this.persistBlacklist;
+    }
+
+    private Database() {
+    }
   }
 
-  @Getter
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
   public static final class Webhook {
     private String url;
     private String username;
@@ -565,31 +977,225 @@ public final class SonarConfiguration {
 
     private final Footer footer = new Footer();
 
-    @Getter
-    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class Footer {
       private String text;
       private String iconUrl;
+
+      public String getText() {
+        return this.text;
+      }
+
+      public String getIconUrl() {
+        return this.iconUrl;
+      }
+
+      private Footer() {
+      }
     }
 
     private final Embed embed = new Embed();
     private final Embed startEmbed = new Embed();
     private boolean startEmbedEnabled;
 
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static final class Embed {
       private String title;
       private String titleUrl;
-      @Setter
       private String description;
-      private int r, g, b;
+      private int r;
+      private int g;
+      private int b;
+
+      public String getTitle() {
+        return this.title;
+      }
+
+      public String getTitleUrl() {
+        return this.titleUrl;
+      }
+
+      public String getDescription() {
+        return this.description;
+      }
+
+      public int getR() {
+        return this.r;
+      }
+
+      public int getG() {
+        return this.g;
+      }
+
+      public int getB() {
+        return this.b;
+      }
+
+      public Embed() {
+      }
+
+      public Embed(final String title, final String titleUrl, final String description, final int r, final int g, final int b) {
+        this.title = title;
+        this.titleUrl = titleUrl;
+        this.description = description;
+        this.r = r;
+        this.g = g;
+        this.b = b;
+      }
+
+      public void setDescription(final String description) {
+        this.description = description;
+      }
     }
 
-    @Getter
     private @Nullable DiscordWebhook discordWebhook;
-    @Getter
     private @Nullable GenericWebhook genericWebhook;
+
+    public String getUrl() {
+      return this.url;
+    }
+
+    public String getUsername() {
+      return this.username;
+    }
+
+    public String getAvatarUrl() {
+      return this.avatarUrl;
+    }
+
+    public String getContent() {
+      return this.content;
+    }
+
+    public Footer getFooter() {
+      return this.footer;
+    }
+
+    public Embed getEmbed() {
+      return this.embed;
+    }
+
+    public Embed getStartEmbed() {
+      return this.startEmbed;
+    }
+
+    public boolean isStartEmbedEnabled() {
+      return this.startEmbedEnabled;
+    }
+
+    private Webhook() {
+    }
+
+    @Nullable
+    public DiscordWebhook getDiscordWebhook() {
+      return this.discordWebhook;
+    }
+
+    @Nullable
+    public GenericWebhook getGenericWebhook() {
+      return this.genericWebhook;
+    }
+  }
+
+  public SimpleYamlConfig getGeneralConfig() {
+    return this.generalConfig;
+  }
+
+  public SimpleYamlConfig getMessagesConfig() {
+    return this.messagesConfig;
+  }
+
+  public SimpleYamlConfig getWebhookConfig() {
+    return this.webhookConfig;
+  }
+
+  public File getLanguageFile() {
+    return this.languageFile;
+  }
+
+  public File getPluginFolder() {
+    return this.pluginFolder;
+  }
+
+  public Language getLanguage() {
+    return this.language;
+  }
+
+  public Queue getQueue() {
+    return this.queue;
+  }
+
+  public Verification getVerification() {
+    return this.verification;
+  }
+
+  public Database getDatabase() {
+    return this.database;
+  }
+
+  public Webhook getWebhook() {
+    return this.webhook;
+  }
+
+  public Component getPrefix() {
+    return this.prefix;
+  }
+
+  public Component getNoPermission() {
+    return this.noPermission;
+  }
+
+  public int getMaxOnlinePerIp() {
+    return this.maxOnlinePerIp;
+  }
+
+  public List<SubnetRange> getAllowlist() {
+    return this.allowlist;
+  }
+
+  public boolean isAdaptiveAttackDetection() {
+    return this.adaptiveAttackDetection;
+  }
+
+  public double getAdaptiveAttackMultiplier() {
+    return this.adaptiveAttackMultiplier;
+  }
+
+  public int getServerListRateLimitMaxPings() {
+    return this.serverListRateLimitMaxPings;
+  }
+
+  public int getServerListRateLimitWindow() {
+    return this.serverListRateLimitWindow;
+  }
+
+  public int getLockdownDefaultDuration() {
+    return this.lockdownDefaultDuration;
+  }
+
+  public Metrics getMetrics() {
+    return this.metrics;
+  }
+
+  public int getMinPlayersForAttack() {
+    return this.minPlayersForAttack;
+  }
+
+  public int getMinAttackDuration() {
+    return this.minAttackDuration;
+  }
+
+  public int getMinAttackThreshold() {
+    return this.minAttackThreshold;
+  }
+
+  public int getAttackCooldownDelay() {
+    return this.attackCooldownDelay;
+  }
+
+  public Component getTooManyOnlinePerIp() {
+    return this.tooManyOnlinePerIp;
+  }
+
+  public List<String> getVerboseAnimation() {
+    return this.verboseAnimation;
   }
 }

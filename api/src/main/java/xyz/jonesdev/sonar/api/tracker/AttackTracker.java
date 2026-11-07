@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.tracker;
 
-import lombok.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
@@ -33,17 +32,18 @@ import java.util.Map;
 
 import static xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler.*;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AttackTracker {
   public static final AttackTracker INSTANCE = new AttackTracker();
 
   private volatile @Nullable AttackStatistics currentAttack;
   private int attackThreshold;
+  // Exponentially weighted moving average of the joins per second outside of attacks
+  private volatile double baselineJoinsPerSecond;
 
-  @Getter
-  @ToString
-  @RequiredArgsConstructor
+  // Weight of a new sample in the baseline; this method runs every 250ms,
+  // so the baseline follows changes over roughly one minute
+  private static final double BASELINE_SMOOTHING = 0.005;
+
   public static final class AttackStatistics {
     private final SystemTimer duration = new SystemTimer();
     private final SystemTimer timer = new SystemTimer();
@@ -52,16 +52,66 @@ public final class AttackTracker {
     private double peakProcessCPUUsage;
     private long peakProcessMemoryUsage;
     // Calculate during-attack-statistics using their deltas
-    private int successfulVerifications, failedVerifications;
+    private int successfulVerifications;
+    private int failedVerifications;
     // Whether the webhooks have already been notified about the start of this attack
     private boolean startNotified;
+
+    public SystemTimer getDuration() {
+      return this.duration;
+    }
+
+    public SystemTimer getTimer() {
+      return this.timer;
+    }
+
+    public long getPeakJoinsPerSecond() {
+      return this.peakJoinsPerSecond;
+    }
+
+    public long getPeakConnectionsPerSecond() {
+      return this.peakConnectionsPerSecond;
+    }
+
+    public double getPeakProcessCPUUsage() {
+      return this.peakProcessCPUUsage;
+    }
+
+    public long getPeakProcessMemoryUsage() {
+      return this.peakProcessMemoryUsage;
+    }
+
+    public int getSuccessfulVerifications() {
+      return this.successfulVerifications;
+    }
+
+    public int getFailedVerifications() {
+      return this.failedVerifications;
+    }
+
+    public boolean isStartNotified() {
+      return this.startNotified;
+    }
+
+    @java.lang.Override
+    public java.lang.String toString() {
+      return "AttackTracker.AttackStatistics(duration=" + this.getDuration() + ", timer=" + this.getTimer() + ", peakJoinsPerSecond=" + this.getPeakJoinsPerSecond() + ", peakConnectionsPerSecond=" + this.getPeakConnectionsPerSecond() + ", peakProcessCPUUsage=" + this.getPeakProcessCPUUsage() + ", peakProcessMemoryUsage=" + this.getPeakProcessMemoryUsage() + ", successfulVerifications=" + this.getSuccessfulVerifications() + ", failedVerifications=" + this.getFailedVerifications() + ", startNotified=" + this.isStartNotified() + ")";
+    }
+
+    public AttackStatistics() {
+    }
   }
 
   public void checkIfUnderAttack() {
     final long joinsPerSecond = Sonar.get0().getStatistics().getLoginsPerSecond();
     final int verifyingPlayers = Sonar.get0().getAntiBot().getConnected().size();
     final int queuedPlayers = Sonar.get0().getAntiBot().getQueue().getPlayers().size();
-    final int minPlayers = Sonar.get0().getConfig().getMinPlayersForAttack();
+    final int minPlayers = getEffectiveMinPlayers();
+
+    // Only learn from normal traffic, so attacks cannot raise their own threshold
+    if (currentAttack == null) {
+      baselineJoinsPerSecond += BASELINE_SMOOTHING * (joinsPerSecond - baselineJoinsPerSecond);
+    }
 
     if (joinsPerSecond > minPlayers // Check the number of bots/joins per second.
       || verifyingPlayers > minPlayers // Check the number of verifying players.
@@ -124,6 +174,22 @@ public final class AttackTracker {
     } else {
       attackThreshold = 0;
     }
+  }
+
+  /**
+   * Returns the number of players that has to be exceeded for an attack to be detected.
+   * With the adaptive detection enabled, this is the learned baseline times the configured multiplier,
+   * but never less than the configured minimum.
+   *
+   * @return The effective minimum number of players for an attack
+   */
+  public int getEffectiveMinPlayers() {
+    final int minPlayers = Sonar.get0().getConfig().getMinPlayersForAttack();
+    if (!Sonar.get0().getConfig().isAdaptiveAttackDetection()) {
+      return minPlayers;
+    }
+    final double adaptive = Math.ceil(baselineJoinsPerSecond * Sonar.get0().getConfig().getAdaptiveAttackMultiplier());
+    return (int) Math.max(minPlayers, Math.min(adaptive, Integer.MAX_VALUE));
   }
 
   /**
@@ -228,5 +294,21 @@ public final class AttackTracker {
       data.put("total-success", verified);
       genericWebhook.post(GenericWebhook.ATTACK_END, data);
     }
+  }
+
+  @Nullable
+  public AttackStatistics getCurrentAttack() {
+    return this.currentAttack;
+  }
+
+  public int getAttackThreshold() {
+    return this.attackThreshold;
+  }
+
+  public double getBaselineJoinsPerSecond() {
+    return this.baselineJoinsPerSecond;
+  }
+
+  private AttackTracker() {
   }
 }

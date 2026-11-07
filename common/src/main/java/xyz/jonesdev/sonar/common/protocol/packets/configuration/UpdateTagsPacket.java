@@ -8,10 +8,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.configuration;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
@@ -31,9 +27,6 @@ import java.util.Map;
 //
 // Taken from
 // https://github.com/BoomEaro/NanoLimbo/blob/feature/1.21.2/src/main/java/ua/nanit/limbo/protocol/packets/configuration/PacketUpdateTags.java
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public final class UpdateTagsPacket implements SonarPacket {
   private Map<String, Map<String, List<Integer>>> tags;
 
@@ -81,5 +74,17 @@ public final class UpdateTagsPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "UpdateTagsPacket(tags=" + this.tags + ")";
+  }
+
+  public UpdateTagsPacket() {
+  }
+
+  protected UpdateTagsPacket(final Map<String, Map<String, List<Integer>>> tags) {
+    this.tags = tags;
   }
 }

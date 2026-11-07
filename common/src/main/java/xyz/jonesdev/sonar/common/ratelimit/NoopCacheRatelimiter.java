@@ -17,15 +17,12 @@
 
 package xyz.jonesdev.sonar.common.ratelimit;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.ratelimit.Ratelimiter;
 
 import java.net.InetAddress;
 
 // Idea taken from Velocity
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NoopCacheRatelimiter implements Ratelimiter<InetAddress> {
   public static final NoopCacheRatelimiter INSTANCE = new NoopCacheRatelimiter();
 
@@ -33,5 +30,8 @@ public final class NoopCacheRatelimiter implements Ratelimiter<InetAddress> {
   public boolean attempt(final @NotNull InetAddress inetAddress) {
     // Accept all connections
     return true;
+  }
+
+  private NoopCacheRatelimiter() {
   }
 }

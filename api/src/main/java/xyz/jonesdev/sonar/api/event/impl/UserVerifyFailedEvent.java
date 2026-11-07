@@ -17,17 +17,37 @@
 
 package xyz.jonesdev.sonar.api.event.impl;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.event.SonarEvent;
 
-@Getter
-@ToString
-@RequiredArgsConstructor
 public final class UserVerifyFailedEvent implements SonarEvent {
   private final @NotNull SonarUser user;
   private final @NotNull String reason;
+
+  @NotNull
+  public SonarUser getUser() {
+    return this.user;
+  }
+
+  @NotNull
+  public String getReason() {
+    return this.reason;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "UserVerifyFailedEvent(user=" + this.getUser() + ", reason=" + this.getReason() + ")";
+  }
+
+  public UserVerifyFailedEvent(@NotNull final SonarUser user, @NotNull final String reason) {
+    if (user == null) {
+      throw new java.lang.NullPointerException("user is marked non-null but is null");
+    }
+    if (reason == null) {
+      throw new java.lang.NullPointerException("reason is marked non-null but is null");
+    }
+    this.user = user;
+    this.reason = reason;
+  }
 }

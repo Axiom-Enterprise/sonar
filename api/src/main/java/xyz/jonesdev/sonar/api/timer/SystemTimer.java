@@ -17,11 +17,9 @@
 
 package xyz.jonesdev.sonar.api.timer;
 
-import lombok.Getter;
 
 import java.text.SimpleDateFormat;
 
-@Getter
 public final class SystemTimer {
   public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("mm:ss");
 
@@ -48,5 +46,9 @@ public final class SystemTimer {
   @Override
   public String toString() {
     return String.format("%.3f", delay() / 1000D);
+  }
+
+  public long getStart() {
+    return this.start;
   }
 }

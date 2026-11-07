@@ -17,17 +17,14 @@
 
 package xyz.jonesdev.sonar.captcha.filters;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-@Getter
-@RequiredArgsConstructor
 public final class NoiseOverlayFilter {
-  private final float density, amount;
+  private final float density;
+  private final float amount;
 
   private static final Random RANDOM = new Random();
 
@@ -51,5 +48,18 @@ public final class NoiseOverlayFilter {
         }
       }
     }
+  }
+
+  public float getDensity() {
+    return this.density;
+  }
+
+  public float getAmount() {
+    return this.amount;
+  }
+
+  public NoiseOverlayFilter(final float density, final float amount) {
+    this.density = density;
+    this.amount = amount;
   }
 }

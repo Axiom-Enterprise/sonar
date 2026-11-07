@@ -18,20 +18,15 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public final class MapDataPacket implements SonarPacket {
   private byte[] buffer;
-  private int x, y;
+  private int x;
+  private int y;
   private int scaling;
   private boolean locked;
 
@@ -77,5 +72,36 @@ public final class MapDataPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public byte[] getBuffer() {
+    return this.buffer;
+  }
+
+  public int getX() {
+    return this.x;
+  }
+
+  public int getY() {
+    return this.y;
+  }
+
+  public int getScaling() {
+    return this.scaling;
+  }
+
+  public boolean isLocked() {
+    return this.locked;
+  }
+
+  public MapDataPacket() {
+  }
+
+  public MapDataPacket(final byte[] buffer, final int x, final int y, final int scaling, final boolean locked) {
+    this.buffer = buffer;
+    this.x = x;
+    this.y = y;
+    this.scaling = scaling;
+    this.locked = locked;
   }
 }

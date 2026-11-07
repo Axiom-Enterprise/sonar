@@ -22,9 +22,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.j256.ormlite.logger.Level;
 import com.j256.ormlite.logger.Logger;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.SonarPlatform;
@@ -37,6 +34,7 @@ import xyz.jonesdev.sonar.api.notification.ActionBarNotificationHandler;
 import xyz.jonesdev.sonar.api.notification.ChatNotificationHandler;
 import xyz.jonesdev.sonar.api.statistics.SonarStatistics;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
+import xyz.jonesdev.sonar.common.metrics.SonarMetricsServer;
 import xyz.jonesdev.sonar.common.protocol.SonarPacketPreparer;
 import xyz.jonesdev.sonar.common.ratelimit.CaffeineCacheRatelimiter;
 import xyz.jonesdev.sonar.common.ratelimit.NoopCacheRatelimiter;
@@ -48,13 +46,9 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 import java.io.File;
 import java.time.Duration;
 
-@Getter
-@RequiredArgsConstructor
 public abstract class SonarBootstrap<T> implements Sonar {
   private T plugin;
-  @Setter
   private ActionBarNotificationHandler actionBarNotificationHandler;
-  @Setter
   private ChatNotificationHandler chatNotificationHandler;
   private SonarConfiguration config;
   private VerifiedPlayerController verifiedPlayerController;
@@ -64,6 +58,7 @@ public abstract class SonarBootstrap<T> implements Sonar {
   private final SonarPlatform platform;
   private final SubcommandRegistry subcommandRegistry;
   private final SystemTimer launchTimer = new SystemTimer();
+  private final SonarMetricsServer metricsServer = new SonarMetricsServer();
 
   public SonarBootstrap(final @NotNull T plugin,
                         final @NotNull SonarPlatform platform,
@@ -99,7 +94,9 @@ public abstract class SonarBootstrap<T> implements Sonar {
       new VerboseCommand(),
       new ReloadCommand(),
       new DumpCommand(),
-      new NotifyCommand());
+      new NotifyCommand(),
+      new LockdownCommand(),
+      new AllowlistCommand());
     // Hide unnecessary debug information
     Logger.setGlobalLogLevel(Level.WARNING);
   }
@@ -184,6 +181,20 @@ public abstract class SonarBootstrap<T> implements Sonar {
       getAntiBot().setServerListPingMaxAge(serverListPingMaxAge);
     }
 
+    // Counters for the server list rate limit; entries expire a fixed time after the first request
+    getAntiBot().setServerListRequests(Caffeine.newBuilder()
+      .expireAfterWrite(Duration.ofMillis(getConfig().getServerListRateLimitWindow()))
+      .ticker(Ticker.systemTicker())
+      .maximumSize(250_000L)
+      .build());
+
+    // Counters for the username pattern check during attacks
+    getAntiBot().setNamePatterns(Caffeine.newBuilder()
+      .expireAfterWrite(Duration.ofMillis(getConfig().getVerification().getNamePattern().getWindow()))
+      .ticker(Ticker.systemTicker())
+      .maximumSize(100_000L)
+      .build());
+
     // Stop the blacklist controller before its database connection is closed
     if (blacklistController != null) {
       blacklistController.close();
@@ -200,6 +211,9 @@ public abstract class SonarBootstrap<T> implements Sonar {
     blacklistController = new BlacklistController(getConfig().getDatabase().isPersistBlacklist()
       ? verifiedPlayerController.getConnectionSource() : null);
     blacklistController.load(getAntiBot().getBlacklist(), blacklistTime);
+
+    // Start, restart or stop the metrics endpoint
+    metricsServer.apply(getConfig().getMetrics());
   }
 
   public final void shutdown() {
@@ -207,6 +221,8 @@ public abstract class SonarBootstrap<T> implements Sonar {
     getLogger().info("Starting shutdown process...");
     // Interrupt threads
     ScheduledServiceManager.stop();
+    // Stop the metrics endpoint
+    metricsServer.stop();
     // Stop the blacklist controller before closing the database connection
     if (blacklistController != null) {
       blacklistController.close();
@@ -222,4 +238,63 @@ public abstract class SonarBootstrap<T> implements Sonar {
   }
 
   public abstract void disable();
+
+  public T getPlugin() {
+    return this.plugin;
+  }
+
+  public ActionBarNotificationHandler getActionBarNotificationHandler() {
+    return this.actionBarNotificationHandler;
+  }
+
+  public ChatNotificationHandler getChatNotificationHandler() {
+    return this.chatNotificationHandler;
+  }
+
+  public SonarConfiguration getConfig() {
+    return this.config;
+  }
+
+  public VerifiedPlayerController getVerifiedPlayerController() {
+    return this.verifiedPlayerController;
+  }
+
+  public BlacklistController getBlacklistController() {
+    return this.blacklistController;
+  }
+
+  public LibraryManager getLibraryManager() {
+    return this.libraryManager;
+  }
+
+  public SonarStatistics getStatistics() {
+    return this.statistics;
+  }
+
+  public SonarPlatform getPlatform() {
+    return this.platform;
+  }
+
+  public SubcommandRegistry getSubcommandRegistry() {
+    return this.subcommandRegistry;
+  }
+
+  public SystemTimer getLaunchTimer() {
+    return this.launchTimer;
+  }
+
+  public SonarBootstrap(final LibraryManager libraryManager, final SonarStatistics statistics, final SonarPlatform platform, final SubcommandRegistry subcommandRegistry) {
+    this.libraryManager = libraryManager;
+    this.statistics = statistics;
+    this.platform = platform;
+    this.subcommandRegistry = subcommandRegistry;
+  }
+
+  public void setActionBarNotificationHandler(final ActionBarNotificationHandler actionBarNotificationHandler) {
+    this.actionBarNotificationHandler = actionBarNotificationHandler;
+  }
+
+  public void setChatNotificationHandler(final ChatNotificationHandler chatNotificationHandler) {
+    this.chatNotificationHandler = chatNotificationHandler;
+  }
 }

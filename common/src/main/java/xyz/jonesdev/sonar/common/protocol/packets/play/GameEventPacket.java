@@ -18,16 +18,10 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public final class GameEventPacket implements SonarPacket {
   private int type;
   private float value;
@@ -41,5 +35,53 @@ public final class GameEventPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getType() {
+    return this.type;
+  }
+
+  public float getValue() {
+    return this.value;
+  }
+
+  public void setType(final int type) {
+    this.type = type;
+  }
+
+  public void setValue(final float value) {
+    this.value = value;
+  }
+
+  @java.lang.Override
+  public boolean equals(final java.lang.Object o) {
+    if (o == this) return true;
+    if (!(o instanceof GameEventPacket)) return false;
+    final GameEventPacket other = (GameEventPacket) o;
+    if (this.getType() != other.getType()) return false;
+    if (java.lang.Float.compare(this.getValue(), other.getValue()) != 0) return false;
+    return true;
+  }
+
+  @java.lang.Override
+  public int hashCode() {
+    final int PRIME = 59;
+    int result = 1;
+    result = result * PRIME + this.getType();
+    result = result * PRIME + java.lang.Float.floatToIntBits(this.getValue());
+    return result;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "GameEventPacket(type=" + this.getType() + ", value=" + this.getValue() + ")";
+  }
+
+  public GameEventPacket() {
+  }
+
+  public GameEventPacket(final int type, final float value) {
+    this.type = type;
+    this.value = value;
   }
 }

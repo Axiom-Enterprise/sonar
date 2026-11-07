@@ -18,10 +18,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
@@ -29,12 +25,10 @@ import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.protocol.item.ItemType;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetContainerSlotPacket implements SonarPacket {
-  private int windowId, slot, count;
+  private int windowId;
+  private int slot;
+  private int count;
   private ItemType itemType;
   private CompoundBinaryTag compoundBinaryTag;
 
@@ -93,5 +87,41 @@ public final class SetContainerSlotPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getWindowId() {
+    return this.windowId;
+  }
+
+  public int getSlot() {
+    return this.slot;
+  }
+
+  public int getCount() {
+    return this.count;
+  }
+
+  public ItemType getItemType() {
+    return this.itemType;
+  }
+
+  public CompoundBinaryTag getCompoundBinaryTag() {
+    return this.compoundBinaryTag;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetContainerSlotPacket(windowId=" + this.getWindowId() + ", slot=" + this.getSlot() + ", count=" + this.getCount() + ", itemType=" + this.getItemType() + ", compoundBinaryTag=" + this.getCompoundBinaryTag() + ")";
+  }
+
+  public SetContainerSlotPacket() {
+  }
+
+  public SetContainerSlotPacket(final int windowId, final int slot, final int count, final ItemType itemType, final CompoundBinaryTag compoundBinaryTag) {
+    this.windowId = windowId;
+    this.slot = slot;
+    this.count = count;
+    this.itemType = itemType;
+    this.compoundBinaryTag = compoundBinaryTag;
   }
 }

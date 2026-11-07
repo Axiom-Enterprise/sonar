@@ -22,8 +22,6 @@ import io.netty.channel.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.SocketAddress;
@@ -52,7 +50,6 @@ public final class ChannelInactiveListener extends ChannelInboundHandlerAdapter 
     }
   }
 
-  @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
   public static final class ProxiedChannelHandlerContext implements ChannelHandlerContext {
     private final ChannelHandlerContext ctx;
 
@@ -263,6 +260,10 @@ public final class ChannelInactiveListener extends ChannelInboundHandlerAdapter 
     @Deprecated
     public <T> boolean hasAttr(AttributeKey<T> attributeKey) {
       return ctx.hasAttr(attributeKey);
+    }
+
+    private ProxiedChannelHandlerContext(final ChannelHandlerContext ctx) {
+      this.ctx = ctx;
     }
   }
 }

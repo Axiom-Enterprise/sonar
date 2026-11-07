@@ -17,14 +17,10 @@
 
 package xyz.jonesdev.sonar.api.antibot.protocol;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
-@RequiredArgsConstructor
 public enum ProtocolVersion {
   UNKNOWN(-1, "Unknown"),
   MINECRAFT_1_7_2(4, "1.7.2"),
@@ -123,5 +119,18 @@ public enum ProtocolVersion {
 
   public boolean isUnknown() {
     return this == UNKNOWN;
+  }
+
+  public int getProtocol() {
+    return this.protocol;
+  }
+
+  public String getName() {
+    return this.name;
+  }
+
+  private ProtocolVersion(final int protocol, final String name) {
+    this.protocol = protocol;
+    this.name = name;
   }
 }

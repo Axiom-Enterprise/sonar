@@ -28,6 +28,33 @@ general:
   # Never add a range like '0.0.0.0/0' since this would disable Sonar completely
   allowlist: []
 
+  # Limits how often a single IP address can request the server list (status ping)
+  # Addresses exceeding the limit are disconnected before the server answers
+  server-list-rate-limit:
+    # Maximum number of server list requests per IP address within the window (0 = disabled)
+    max-pings: 15
+    # Length of the window
+    # (This value represents the time in milliseconds: 1 second = 1000 milliseconds)
+    window: 10000
+
+# '/sonar lockdown' temporarily disconnects every player that has never been verified
+# Verified and allowlisted players can still join while the lockdown is active
+lockdown:
+  # Duration (in minutes) of '/sonar lockdown on' if no duration is given
+  default-duration: 30
+
+# Exposes Sonar's statistics in the Prometheus text format (e.g. for Grafana)
+# The endpoint is available at http://<host>:<port>/metrics
+metrics:
+  # Should Sonar start the metrics endpoint?
+  enabled: false
+  # Address the endpoint listens on; keep 127.0.0.1 unless Prometheus runs on another machine
+  host: 127.0.0.1
+  # Port the endpoint listens on
+  port: 9465
+  # Optional secret; if set, requests must send the header 'Authorization: Bearer <token>'
+  token: ''
+
 # Configurações de sensibilidade para o rastreador de ataques
 # Edite isso apenas se você souber o que está fazendo
 attack-tracker:
@@ -42,6 +69,15 @@ attack-tracker:
   # Tempo que deve passar para que um novo ataque seja detectado
   # (Este valor representa o tempo em milissegundos: 1 segundo = 1000 milissegundos)
   attack-cooldown-delay: 3000
+
+  # The adaptive detection learns how many players usually join your server per second
+  # and only reports an attack if the traffic is clearly above this baseline
+  # min-players-for-attack is always used as the lower limit
+  adaptive:
+    # Should Sonar use the adaptive attack detection?
+    enabled: false
+    # How many times higher than the baseline the traffic has to be
+    multiplier: 3.0
 
 # Você pode conectar o Sonar a um banco de dados para manter jogadores verificados mesmo após reiniciar seu servidor
 # Nota: Endereços IP são salvos em texto simples. Você é responsável por manter seu banco de dados seguro!
@@ -147,6 +183,27 @@ verification:
       timing: DURING_ATTACK
       # How long (in milliseconds) a server list ping is valid
       max-age: 60000
+
+    # Checks the hostname (server address) players used to connect
+    # Bots often connect using the raw IP address or an unknown domain
+    hostname:
+      # Should Sonar check the hostname?
+      enabled: false
+      # Hostnames players are allowed to use ('*.' at the beginning allows all subdomains)
+      # Example: ['play.my-server.com', '*.my-server.com']
+      # The check is skipped if this list is empty
+      allowed: []
+
+    # Blocks usernames that follow the same pattern (e.g. Bot_123, Bot_456) during an attack
+    # Digits are ignored and letters are compared in lower case, so numbered bot names share a pattern
+    name-pattern:
+      # Should Sonar block repeated name patterns during attacks?
+      enabled: true
+      # Number of new players with the same pattern before the pattern is blocked
+      threshold: 10
+      # How long joins are counted for each pattern
+      # (This value represents the time in milliseconds: 1 second = 1000 milliseconds)
+      window: 30000
 
     # Verifica se os jogadores estão enviando uma marca de cliente válida para o servidor
     client-brand:

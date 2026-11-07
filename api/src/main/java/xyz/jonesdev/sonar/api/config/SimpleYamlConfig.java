@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.config;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.simpleyaml.configuration.MemorySection;
 import org.simpleyaml.configuration.file.YamlFile;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Getter
 public final class SimpleYamlConfig {
   private final File file;
   private final YamlFile yaml;
@@ -115,6 +113,22 @@ public final class SimpleYamlConfig {
     throw new IllegalStateException("Invalid entry " + path);
   }
 
+  public double getDouble(final String path) {
+    if (!yaml.contains(path)) {
+      Sonar.get0().getLogger().warn("Could not find {} in {}.", path, file.getName());
+      return 0;
+    }
+    return yaml.getDouble(path);
+  }
+
+  /**
+   * Writes the current values (including comments) back to the file.
+   * Used by commands that change the configuration without requiring a reload.
+   */
+  public void save() throws Exception {
+    yaml.save();
+  }
+
   public List<String> getStringList(final String path) {
     if (!yaml.contains(path)) {
       Sonar.get0().getLogger().warn("Could not find {} in {}.", path, file.getName());
@@ -129,5 +143,13 @@ public final class SimpleYamlConfig {
       return new ArrayList<>(0);
     }
     return yaml.getIntegerList(path);
+  }
+
+  public File getFile() {
+    return this.file;
+  }
+
+  public YamlFile getYaml() {
+    return this.yaml;
   }
 }

@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.protocol;
 
-import lombok.experimental.UtilityClass;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -47,27 +46,26 @@ import java.io.File;
 import java.util.Random;
 import java.util.UUID;
 
-@UtilityClass
-public class SonarPacketPreparer {
-  private final Random RANDOM = new Random();
+public final class SonarPacketPreparer {
+  private static final Random RANDOM = new Random();
 
   public static final int PLAYER_ENTITY_ID = RANDOM.nextInt();
   public static final int VEHICLE_ENTITY_ID = RANDOM.nextInt();
 
   public static final BlockType[] POSSIBLE_BLOCK_TYPES = BlockType.values();
-  public final SonarPacket[] BLOCKS_PACKETS = new SonarPacket[POSSIBLE_BLOCK_TYPES.length];
+  public static final SonarPacket[] BLOCKS_PACKETS = new SonarPacket[POSSIBLE_BLOCK_TYPES.length];
 
-  public final int BLOCKS_PER_ROW = 8; // 8 * 8 = 64 (vanilla protocol maximum)
-  public final int SPAWN_X_POSITION = 16 / 2; // middle of the chunk
-  public final int SPAWN_Z_POSITION = 16 / 2; // middle of the chunk
-  public final int PLATFORM_Y_POSITION = 1 + RANDOM.nextInt(255); // 255 is the maximum Y position
-  public final int IN_AIR_Y_POSITION = 3000 + RANDOM.nextInt(500); // Random high altitude
+  public static final int BLOCKS_PER_ROW = 8; // 8 * 8 = 64 (vanilla protocol maximum)
+  public static final int SPAWN_X_POSITION = 16 / 2; // middle of the chunk
+  public static final int SPAWN_Z_POSITION = 16 / 2; // middle of the chunk
+  public static final int PLATFORM_Y_POSITION = 1 + RANDOM.nextInt(255); // 255 is the maximum Y position
+  public static final int IN_AIR_Y_POSITION = 3000 + RANDOM.nextInt(500); // Random high altitude
 
-  public final int FIRST_TELEPORT_ID = RANDOM.nextInt();
-  public final int SECOND_TELEPORT_ID = RANDOM.nextInt();
-  public final int PRE_JOIN_KEEP_ALIVE_ID = RANDOM.nextInt();
+  public static final int FIRST_TELEPORT_ID = RANDOM.nextInt();
+  public static final int SECOND_TELEPORT_ID = RANDOM.nextInt();
+  public static final int PRE_JOIN_KEEP_ALIVE_ID = RANDOM.nextInt();
 
-  private final int MAP_SLOT = RANDOM.nextInt(9);
+  private static final int MAP_SLOT = RANDOM.nextInt(9);
 
   public static final SonarPacket CAPTCHA_SET_CONTAINER_SLOT = new SetContainerSlotPacket(
     0, 36 + MAP_SLOT, 1, ItemType.FILLED_MAP, CompoundBinaryTag.builder()
@@ -78,13 +76,13 @@ public class SonarPacketPreparer {
     .put("map", IntBinaryTag.intBinaryTag(0)) // map id
     .build());
   public final static SonarPacket CAPTCHA_HELD_ITEM_SLOT = new SetHeldItemPacket(MAP_SLOT);
-  public final SonarPacket DEFAULT_ABILITIES = new PlayerAbilitiesPacket(0x00, 0, 0);
-  public final SonarPacket NO_MOVE_ABILITIES = new PlayerAbilitiesPacket(0x02, 0, 0);
-  public final SonarPacket NO_MOVE_ABILITIES_BEDROCK = new PlayerAbilitiesPacket(0x06, 0, 0);
-  public final SonarPacket CAPTCHA_POSITION = new SonarPacketSnapshot(new SetPlayerPositionRotationPacket(
+  public static final SonarPacket DEFAULT_ABILITIES = new PlayerAbilitiesPacket(0x00, 0, 0);
+  public static final SonarPacket NO_MOVE_ABILITIES = new PlayerAbilitiesPacket(0x02, 0, 0);
+  public static final SonarPacket NO_MOVE_ABILITIES_BEDROCK = new PlayerAbilitiesPacket(0x06, 0, 0);
+  public static final SonarPacket CAPTCHA_POSITION = new SonarPacketSnapshot(new SetPlayerPositionRotationPacket(
     SPAWN_X_POSITION, 10000, SPAWN_Z_POSITION, 0, 90, 0, 0, false, false, true));
   // I think the people working at Microsoft are actually the *real* ultimate trolls of the internet!
-  public final SonarPacket[] EMPTY_CHUNK_DATA = new SonarPacket[]{
+  public static final SonarPacket[] EMPTY_CHUNK_DATA = new SonarPacket[]{
     new SonarPacketSnapshot(new ChunkDataPacket(0, 0)),
     new SonarPacketSnapshot(new ChunkDataPacket(0, 1)),
     new SonarPacketSnapshot(new ChunkDataPacket(0, -1)),
@@ -95,24 +93,24 @@ public class SonarPacketPreparer {
     new SonarPacketSnapshot(new ChunkDataPacket(-1, 1)),
     new SonarPacketSnapshot(new ChunkDataPacket(-1, -1))
   };
-  public final SonarPacket PRE_JOIN_KEEP_ALIVE = new SonarPacketSnapshot(new KeepAlivePacket(PRE_JOIN_KEEP_ALIVE_ID));
-  public final SonarPacket[] REGISTRY_SYNC_1_20 = new SonarPacket[] {
+  public static final SonarPacket PRE_JOIN_KEEP_ALIVE = new SonarPacketSnapshot(new KeepAlivePacket(PRE_JOIN_KEEP_ALIVE_ID));
+  public static final SonarPacket[] REGISTRY_SYNC_1_20 = new SonarPacket[] {
     new SonarPacketSnapshot(new RegistryDataPacket(DimensionRegistry.CODEC_1_20, null, null))};
-  public final SonarPacket[] REGISTRY_SYNC_1_20_5 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_20_5);
-  public final SonarPacket[] REGISTRY_SYNC_1_21 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21);
-  public final SonarPacket[] REGISTRY_SYNC_1_21_2 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_2);
-  public final SonarPacket[] REGISTRY_SYNC_1_21_4 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_4);
-  public final SonarPacket[] REGISTRY_SYNC_1_21_5 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_5);
-  public final SonarPacket[] REGISTRY_SYNC_1_21_11 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_11);
-  public final SonarPacket[] REGISTRY_SYNC_26_1 = RegistryDataPacket.of(DimensionRegistry.CODEC_26_1);
-  public final SonarPacket[] REGISTRY_SYNC_26_2 = RegistryDataPacket.of(DimensionRegistry.CODEC_26_2);
-  public final SonarPacket[] REGISTRY_SYNC_26_3 = RegistryDataPacket.of(DimensionRegistry.CODEC_26_3);
-  public final SonarPacket TAGS_UPDATE_26_1 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_1);
-  public final SonarPacket TAGS_UPDATE_26_2 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_2);
-  public final SonarPacket TAGS_UPDATE_26_3 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_3);
-  public final SonarPacket START_WRITING_CHUNKS = new GameEventPacket(13, 0);
-  public final static SonarPacket INVALID_HELD_ITEM_SLOT = new SetHeldItemPacket(-1);
-  public final SonarPacket RANDOM_KEEP_ALIVE = new SonarPacketSnapshot(new KeepAlivePacket(RANDOM.nextInt()));
+  public static final SonarPacket[] REGISTRY_SYNC_1_20_5 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_20_5);
+  public static final SonarPacket[] REGISTRY_SYNC_1_21 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21);
+  public static final SonarPacket[] REGISTRY_SYNC_1_21_2 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_2);
+  public static final SonarPacket[] REGISTRY_SYNC_1_21_4 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_4);
+  public static final SonarPacket[] REGISTRY_SYNC_1_21_5 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_5);
+  public static final SonarPacket[] REGISTRY_SYNC_1_21_11 = RegistryDataPacket.of(DimensionRegistry.CODEC_1_21_11);
+  public static final SonarPacket[] REGISTRY_SYNC_26_1 = RegistryDataPacket.of(DimensionRegistry.CODEC_26_1);
+  public static final SonarPacket[] REGISTRY_SYNC_26_2 = RegistryDataPacket.of(DimensionRegistry.CODEC_26_2);
+  public static final SonarPacket[] REGISTRY_SYNC_26_3 = RegistryDataPacket.of(DimensionRegistry.CODEC_26_3);
+  public static final SonarPacket TAGS_UPDATE_26_1 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_1);
+  public static final SonarPacket TAGS_UPDATE_26_2 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_2);
+  public static final SonarPacket TAGS_UPDATE_26_3 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_3);
+  public static final SonarPacket START_WRITING_CHUNKS = new GameEventPacket(13, 0);
+  public static final SonarPacket INVALID_HELD_ITEM_SLOT = new SetHeldItemPacket(-1);
+  public static final SonarPacket RANDOM_KEEP_ALIVE = new SonarPacketSnapshot(new KeepAlivePacket(RANDOM.nextInt()));
   public static final SonarPacket SPAWN_BOAT_ENTITY = new SonarPacketSnapshot(new SpawnEntityPacket(
     VEHICLE_ENTITY_ID, EntityType.BOAT, SPAWN_X_POSITION, IN_AIR_Y_POSITION, SPAWN_Z_POSITION,
     0, 0, 0, 0));
@@ -122,30 +120,35 @@ public class SonarPacketPreparer {
   public static final SonarPacket REMOVE_VEHICLE = new RemoveEntitiesPacket(VEHICLE_ENTITY_ID);
   public static final SonarPacket SET_VEHICLE_PASSENGERS = new SonarPacketSnapshot(
     new SetPassengersPacket(VEHICLE_ENTITY_ID, PLAYER_ENTITY_ID));
-  public SonarPacket[] incorrectCaptcha;
+  public static SonarPacket[] incorrectCaptcha;
 
-  public SonarPacket loginSuccess;
-  public SonarPacket welcomeMessage;
-  public SonarPacket enterCodeMessage;
+  public static SonarPacket loginSuccess;
+  public static SonarPacket welcomeMessage;
+  public static SonarPacket enterCodeMessage;
   public static SonarPacket joinGame;
-  public SonarPacket defaultSpawnPosition;
-  public SonarPacket spawnPosition;
-  public SonarPacket fallStartPosition;
-  public SonarPacket fallStartPositionLegacy;
-  public SonarPacket blacklisted;
-  public SonarPacket alreadyQueued;
-  public SonarPacket alreadyVerifying;
-  public SonarPacket reconnectedTooFast;
-  public SonarPacket protocolBlacklisted;
-  public SonarPacket unsupportedVersion;
-  public SonarPacket tooManyOnlinePerIP;
-  public SonarPacket serverListPingRequired;
-  public SonarPacket[] xpCountdown;
-  public SonarPacket updateTime;
+  public static SonarPacket defaultSpawnPosition;
+  public static SonarPacket spawnPosition;
+  public static SonarPacket fallStartPosition;
+  public static SonarPacket fallStartPositionLegacy;
+  public static SonarPacket blacklisted;
+  public static SonarPacket alreadyQueued;
+  public static SonarPacket alreadyVerifying;
+  public static SonarPacket reconnectedTooFast;
+  public static SonarPacket protocolBlacklisted;
+  public static SonarPacket unsupportedVersion;
+  public static SonarPacket tooManyOnlinePerIP;
+  public static SonarPacket serverListPingRequired;
+  public static SonarPacket invalidHostname;
+  public static SonarPacket namePatternBlocked;
+  public static SonarPacket lockdown;
+  public static SonarPacket[] xpCountdown;
+  public static SonarPacket updateTime;
 
-  public static int maxMovementTick, dynamicSpawnYPosition, maxTotalPacketsSent;
+  public static int maxMovementTick;
+  public static int dynamicSpawnYPosition;
+  public static int maxTotalPacketsSent;
 
-  public void prepare() {
+  public static void prepare() {
     // Preload the packet registry to avoid CPU/RAM issues on 1st connection
     Sonar.get0().getLogger().info("Preloading all registered packets...");
     //noinspection ResultOfMethodCallIgnored
@@ -172,7 +175,8 @@ public class SonarPacketPreparer {
     // Prepare the gravity check
     maxMovementTick = Sonar.get0().getConfig().getVerification().getGravity().getMaxMovementTicks();
 
-    double motionY = 0, fallDistance = 0;
+    double motionY = 0;
+    double fallDistance = 0;
 
     for (int i = 0; i < maxMovementTick; i++) {
       motionY = (motionY - 0.1) * 0.98f;
@@ -219,6 +223,9 @@ public class SonarPacketPreparer {
     unsupportedVersion = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getUnsupportedVersion(), true));
     tooManyOnlinePerIP = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getTooManyOnlinePerIp(), true));
     serverListPingRequired = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getServerListPingRequired(), true));
+    invalidHostname = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getInvalidHostname(), true));
+    namePatternBlocked = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getNamePatternBlocked(), true));
+    lockdown = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getLockdown(), true));
 
     // Prepare update time packet
     final int timeOfDay = Sonar.get0().getConfig().getVerification().getTimeOfDay();
@@ -331,5 +338,9 @@ public class SonarPacketPreparer {
       return REGISTRY_SYNC_1_20_5;
     }
     return REGISTRY_SYNC_1_20;
+  }
+
+  private SonarPacketPreparer() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

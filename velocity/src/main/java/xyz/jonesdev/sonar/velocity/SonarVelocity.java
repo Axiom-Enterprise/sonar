@@ -18,7 +18,6 @@
 package xyz.jonesdev.sonar.velocity;
 
 import com.alessiodp.libby.VelocityLibraryManager;
-import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import org.bstats.charts.SimplePie;
 import org.bstats.velocity.Metrics;
@@ -32,7 +31,6 @@ import xyz.jonesdev.sonar.velocity.command.VelocitySonarCommand;
 
 import java.util.UUID;
 
-@Getter
 public final class SonarVelocity extends SonarBootstrap<SonarVelocityPlugin> {
   public SonarVelocity(final @NotNull SonarVelocityPlugin plugin) {
     super(plugin, SonarPlatform.VELOCITY, plugin.getDataDirectory().toFile(),
@@ -116,5 +114,19 @@ public final class SonarVelocity extends SonarBootstrap<SonarVelocityPlugin> {
     if (metrics != null) {
       metrics.shutdown();
     }
+  }
+
+  /**
+   * Create a wrapper for the plugin logger, so we can use it outside
+   * the velocity module.
+   * <br>
+   * We have to do this, so we can access all necessary API functions.
+   */
+  public LoggerWrapper getLogger() {
+    return this.logger;
+  }
+
+  public Metrics getMetrics() {
+    return this.metrics;
   }
 }

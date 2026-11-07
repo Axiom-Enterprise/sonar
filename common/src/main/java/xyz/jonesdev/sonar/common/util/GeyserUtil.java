@@ -19,22 +19,24 @@ package xyz.jonesdev.sonar.common.util;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
 
-@UtilityClass
-public class GeyserUtil {
+public final class GeyserUtil {
   // https://github.com/GeyserMC/Floodgate/blob/master/core/src/main/java/org/geysermc/floodgate/module/CommonModule.java#L206
-  private final AttributeKey<Object> PLAYER_ATTRIBUTE = AttributeKey.valueOf("floodgate-player");
+  private static final AttributeKey<Object> PLAYER_ATTRIBUTE = AttributeKey.valueOf("floodgate-player");
 
-  public boolean isGeyserConnection(final @NotNull Channel channel, final @NotNull InetSocketAddress originalAddress) {
+  public static boolean isGeyserConnection(final @NotNull Channel channel, final @NotNull InetSocketAddress originalAddress) {
     /*
      * This method performs two checks:
      * 1. It checks if the player is joining through Floodgate, which is installed on the server.
      * 2. It checks if the player is joining through a Floodgate proxy hosted externally.
      */
     return originalAddress.getPort() == 0 || channel.attr(PLAYER_ATTRIBUTE).get() != null;
+  }
+
+  private GeyserUtil() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

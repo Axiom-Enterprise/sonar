@@ -18,17 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.*;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString(of = {"entityId", "hand"})
 public final class AnimationPacket implements SonarPacket {
   private int entityId = -1;
   private int hand = MAIN_HAND;
@@ -54,7 +48,6 @@ public final class AnimationPacket implements SonarPacket {
     }
   }
 
-  @Getter
   public enum LegacyAnimationType {
     NO_ANIMATION,
     SWING_ARM,
@@ -93,5 +86,47 @@ public final class AnimationPacket implements SonarPacket {
           throw new IllegalArgumentException("Unknown type with id: " + id);
       }
     }
+
+    public int getId() {
+      return this.id;
+    }
+  }
+
+  public int getEntityId() {
+    return this.entityId;
+  }
+
+  public int getHand() {
+    return this.hand;
+  }
+
+  public LegacyAnimationType getType() {
+    return this.type;
+  }
+
+  public void setEntityId(final int entityId) {
+    this.entityId = entityId;
+  }
+
+  public void setHand(final int hand) {
+    this.hand = hand;
+  }
+
+  public void setType(final LegacyAnimationType type) {
+    this.type = type;
+  }
+
+  public AnimationPacket() {
+  }
+
+  public AnimationPacket(final int entityId, final int hand, final LegacyAnimationType type) {
+    this.entityId = entityId;
+    this.hand = hand;
+    this.type = type;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "AnimationPacket(entityId=" + this.getEntityId() + ", hand=" + this.getHand() + ")";
   }
 }

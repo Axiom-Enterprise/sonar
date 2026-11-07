@@ -18,12 +18,9 @@
 package xyz.jonesdev.sonar.common.protocol.packets.configuration;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FinishConfigurationPacket implements SonarPacket {
   public static final FinishConfigurationPacket INSTANCE = new FinishConfigurationPacket();
 
@@ -39,5 +36,8 @@ public final class FinishConfigurationPacket implements SonarPacket {
   public int expectedMaxLength(final ProtocolVersion protocolVersion) {
     // This packet is always empty; see https://wiki.vg/Protocol#Finish_Configuration
     return 0;
+  }
+
+  private FinishConfigurationPacket() {
   }
 }

@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.util;
 
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -52,8 +51,7 @@ import java.util.UUID;
  * UUIDs. As the native Java 9+ UUID.toString() implementation dashes its UUIDs, we use the FastUUID
  * methods, which ought to be faster than a String.replace().
  */
-@UtilityClass
-public class FastUuidSansHyphens {
+public final class FastUuidSansHyphens {
   private static final int MOJANG_BROKEN_UUID_LENGTH = 32;
 
   private static final char[] HEX_DIGITS =
@@ -107,5 +105,9 @@ public class FastUuidSansHyphens {
     uuidChars[31] = HEX_DIGITS[(int)  (leastSignificantBits & 0x000000000000000fL)];
 
     return new String(uuidChars);
+  }
+
+  private FastUuidSansHyphens() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

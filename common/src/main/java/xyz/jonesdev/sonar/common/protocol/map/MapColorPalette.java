@@ -17,14 +17,12 @@
 
 package xyz.jonesdev.sonar.common.protocol.map;
 
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 
-@UtilityClass
-public class MapColorPalette {
+public final class MapColorPalette {
   // https://minecraft.wiki/w/Map_item_format#Full_color_tables
   // TODO: load mappings from a separate file
   public static final int[] COLOR_MAP = {
@@ -174,16 +172,17 @@ public class MapColorPalette {
     -12910336,
   };
 
-  public byte[] imageToBuffer(final @NotNull BufferedImage bufferedImage) {
+  public static byte[] imageToBuffer(final @NotNull BufferedImage bufferedImage) {
     final byte[] buffer = new byte[128 * 128];
     writeRGBBuffer(bufferedImage, buffer);
     return buffer;
   }
 
-  private void writeRGBBuffer(final @NotNull BufferedImage bufferedImage, final byte @NotNull [] rgbArray) {
+  private static void writeRGBBuffer(final @NotNull BufferedImage bufferedImage, final byte @NotNull [] rgbArray) {
     final Raster raster = bufferedImage.getRaster();
     final Object data = new byte[raster.getNumBands()];
-    int yoff = 0, off;
+    int yoff = 0;
+    int off;
 
     for (int y = 0; y < raster.getHeight(); y++, yoff += raster.getWidth()) {
       off = yoff;
@@ -194,7 +193,7 @@ public class MapColorPalette {
     }
   }
 
-  private byte rgbToNearestMinecraft(final int rgb) {
+  private static byte rgbToNearestMinecraft(final int rgb) {
     int minDistance = Integer.MAX_VALUE;
     byte closestIndex = 0;
     for (int i = 0; i < COLOR_MAP.length; i++) {
@@ -213,7 +212,7 @@ public class MapColorPalette {
     return closestIndex;
   }
 
-  private int calculateColorDistance(final int rgb0, final int rgb1) {
+  private static int calculateColorDistance(final int rgb0, final int rgb1) {
     final int red0 = (rgb0 >> 16) & 0xFF;
     final int green0 = (rgb0 >> 8) & 0xFF;
     final int blue0 = rgb0 & 0xFF;
@@ -224,5 +223,9 @@ public class MapColorPalette {
     return (red0 - red1) * (red0 - red1)
       + (green0 - green1) * (green0 - green1)
       + (blue0 - blue1) * (blue0 - blue1);
+  }
+
+  private MapColorPalette() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

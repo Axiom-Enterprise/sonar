@@ -18,9 +18,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
@@ -33,9 +30,6 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
 import java.util.Objects;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public final class JoinGamePacket implements SonarPacket {
   private int entityId;
   private int gamemode;
@@ -203,5 +197,283 @@ public final class JoinGamePacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getEntityId() {
+    return this.entityId;
+  }
+
+  public int getGamemode() {
+    return this.gamemode;
+  }
+
+  public int getPreviousGamemode() {
+    return this.previousGamemode;
+  }
+
+  public int getViewDistance() {
+    return this.viewDistance;
+  }
+
+  public int getSimulationDistance() {
+    return this.simulationDistance;
+  }
+
+  public int getDifficulty() {
+    return this.difficulty;
+  }
+
+  public int getMaxPlayers() {
+    return this.maxPlayers;
+  }
+
+  public int getPortalCooldown() {
+    return this.portalCooldown;
+  }
+
+  public int getSeaLevel() {
+    return this.seaLevel;
+  }
+
+  public String[] getLevelNames() {
+    return this.levelNames;
+  }
+
+  public String getLevelName() {
+    return this.levelName;
+  }
+
+  public String getLevelType() {
+    return this.levelType;
+  }
+
+  public DimensionType getDimension() {
+    return this.dimension;
+  }
+
+  public long getPartialHashedSeed() {
+    return this.partialHashedSeed;
+  }
+
+  public boolean isHardcore() {
+    return this.hardcore;
+  }
+
+  public boolean isReducedDebugInfo() {
+    return this.reducedDebugInfo;
+  }
+
+  public boolean isShowRespawnScreen() {
+    return this.showRespawnScreen;
+  }
+
+  public boolean isDebug() {
+    return this.debug;
+  }
+
+  public boolean isFlat() {
+    return this.flat;
+  }
+
+  public boolean isLimitedCrafting() {
+    return this.limitedCrafting;
+  }
+
+  public boolean isSecureProfile() {
+    return this.secureProfile;
+  }
+
+  public boolean isOnlineMode() {
+    return this.onlineMode;
+  }
+
+  public void setEntityId(final int entityId) {
+    this.entityId = entityId;
+  }
+
+  public void setGamemode(final int gamemode) {
+    this.gamemode = gamemode;
+  }
+
+  public void setPreviousGamemode(final int previousGamemode) {
+    this.previousGamemode = previousGamemode;
+  }
+
+  public void setViewDistance(final int viewDistance) {
+    this.viewDistance = viewDistance;
+  }
+
+  public void setSimulationDistance(final int simulationDistance) {
+    this.simulationDistance = simulationDistance;
+  }
+
+  public void setDifficulty(final int difficulty) {
+    this.difficulty = difficulty;
+  }
+
+  public void setMaxPlayers(final int maxPlayers) {
+    this.maxPlayers = maxPlayers;
+  }
+
+  public void setPortalCooldown(final int portalCooldown) {
+    this.portalCooldown = portalCooldown;
+  }
+
+  public void setSeaLevel(final int seaLevel) {
+    this.seaLevel = seaLevel;
+  }
+
+  public void setLevelNames(final String[] levelNames) {
+    this.levelNames = levelNames;
+  }
+
+  public void setLevelName(final String levelName) {
+    this.levelName = levelName;
+  }
+
+  public void setLevelType(final String levelType) {
+    this.levelType = levelType;
+  }
+
+  public void setDimension(final DimensionType dimension) {
+    this.dimension = dimension;
+  }
+
+  public void setPartialHashedSeed(final long partialHashedSeed) {
+    this.partialHashedSeed = partialHashedSeed;
+  }
+
+  public void setHardcore(final boolean hardcore) {
+    this.hardcore = hardcore;
+  }
+
+  public void setReducedDebugInfo(final boolean reducedDebugInfo) {
+    this.reducedDebugInfo = reducedDebugInfo;
+  }
+
+  public void setShowRespawnScreen(final boolean showRespawnScreen) {
+    this.showRespawnScreen = showRespawnScreen;
+  }
+
+  public void setDebug(final boolean debug) {
+    this.debug = debug;
+  }
+
+  public void setFlat(final boolean flat) {
+    this.flat = flat;
+  }
+
+  public void setLimitedCrafting(final boolean limitedCrafting) {
+    this.limitedCrafting = limitedCrafting;
+  }
+
+  public void setSecureProfile(final boolean secureProfile) {
+    this.secureProfile = secureProfile;
+  }
+
+  public void setOnlineMode(final boolean onlineMode) {
+    this.onlineMode = onlineMode;
+  }
+
+  @java.lang.Override
+  public boolean equals(final java.lang.Object o) {
+    if (o == this) return true;
+    if (!(o instanceof JoinGamePacket)) return false;
+    final JoinGamePacket other = (JoinGamePacket) o;
+    if (this.getEntityId() != other.getEntityId()) return false;
+    if (this.getGamemode() != other.getGamemode()) return false;
+    if (this.getPreviousGamemode() != other.getPreviousGamemode()) return false;
+    if (this.getViewDistance() != other.getViewDistance()) return false;
+    if (this.getSimulationDistance() != other.getSimulationDistance()) return false;
+    if (this.getDifficulty() != other.getDifficulty()) return false;
+    if (this.getMaxPlayers() != other.getMaxPlayers()) return false;
+    if (this.getPortalCooldown() != other.getPortalCooldown()) return false;
+    if (this.getSeaLevel() != other.getSeaLevel()) return false;
+    if (this.getPartialHashedSeed() != other.getPartialHashedSeed()) return false;
+    if (this.isHardcore() != other.isHardcore()) return false;
+    if (this.isReducedDebugInfo() != other.isReducedDebugInfo()) return false;
+    if (this.isShowRespawnScreen() != other.isShowRespawnScreen()) return false;
+    if (this.isDebug() != other.isDebug()) return false;
+    if (this.isFlat() != other.isFlat()) return false;
+    if (this.isLimitedCrafting() != other.isLimitedCrafting()) return false;
+    if (this.isSecureProfile() != other.isSecureProfile()) return false;
+    if (this.isOnlineMode() != other.isOnlineMode()) return false;
+    if (!java.util.Arrays.deepEquals(this.getLevelNames(), other.getLevelNames())) return false;
+    final java.lang.Object this$levelName = this.getLevelName();
+    final java.lang.Object other$levelName = other.getLevelName();
+    if (this$levelName == null ? other$levelName != null : !this$levelName.equals(other$levelName)) return false;
+    final java.lang.Object this$levelType = this.getLevelType();
+    final java.lang.Object other$levelType = other.getLevelType();
+    if (this$levelType == null ? other$levelType != null : !this$levelType.equals(other$levelType)) return false;
+    final java.lang.Object this$dimension = this.getDimension();
+    final java.lang.Object other$dimension = other.getDimension();
+    if (this$dimension == null ? other$dimension != null : !this$dimension.equals(other$dimension)) return false;
+    return true;
+  }
+
+  @java.lang.Override
+  public int hashCode() {
+    final int PRIME = 59;
+    int result = 1;
+    result = result * PRIME + this.getEntityId();
+    result = result * PRIME + this.getGamemode();
+    result = result * PRIME + this.getPreviousGamemode();
+    result = result * PRIME + this.getViewDistance();
+    result = result * PRIME + this.getSimulationDistance();
+    result = result * PRIME + this.getDifficulty();
+    result = result * PRIME + this.getMaxPlayers();
+    result = result * PRIME + this.getPortalCooldown();
+    result = result * PRIME + this.getSeaLevel();
+    final long $partialHashedSeed = this.getPartialHashedSeed();
+    result = result * PRIME + (int) ($partialHashedSeed >>> 32 ^ $partialHashedSeed);
+    result = result * PRIME + (this.isHardcore() ? 79 : 97);
+    result = result * PRIME + (this.isReducedDebugInfo() ? 79 : 97);
+    result = result * PRIME + (this.isShowRespawnScreen() ? 79 : 97);
+    result = result * PRIME + (this.isDebug() ? 79 : 97);
+    result = result * PRIME + (this.isFlat() ? 79 : 97);
+    result = result * PRIME + (this.isLimitedCrafting() ? 79 : 97);
+    result = result * PRIME + (this.isSecureProfile() ? 79 : 97);
+    result = result * PRIME + (this.isOnlineMode() ? 79 : 97);
+    result = result * PRIME + java.util.Arrays.deepHashCode(this.getLevelNames());
+    final java.lang.Object $levelName = this.getLevelName();
+    result = result * PRIME + ($levelName == null ? 43 : $levelName.hashCode());
+    final java.lang.Object $levelType = this.getLevelType();
+    result = result * PRIME + ($levelType == null ? 43 : $levelType.hashCode());
+    final java.lang.Object $dimension = this.getDimension();
+    result = result * PRIME + ($dimension == null ? 43 : $dimension.hashCode());
+    return result;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "JoinGamePacket(entityId=" + this.getEntityId() + ", gamemode=" + this.getGamemode() + ", previousGamemode=" + this.getPreviousGamemode() + ", viewDistance=" + this.getViewDistance() + ", simulationDistance=" + this.getSimulationDistance() + ", difficulty=" + this.getDifficulty() + ", maxPlayers=" + this.getMaxPlayers() + ", portalCooldown=" + this.getPortalCooldown() + ", seaLevel=" + this.getSeaLevel() + ", levelNames=" + java.util.Arrays.deepToString(this.getLevelNames()) + ", levelName=" + this.getLevelName() + ", levelType=" + this.getLevelType() + ", dimension=" + this.getDimension() + ", partialHashedSeed=" + this.getPartialHashedSeed() + ", hardcore=" + this.isHardcore() + ", reducedDebugInfo=" + this.isReducedDebugInfo() + ", showRespawnScreen=" + this.isShowRespawnScreen() + ", debug=" + this.isDebug() + ", flat=" + this.isFlat() + ", limitedCrafting=" + this.isLimitedCrafting() + ", secureProfile=" + this.isSecureProfile() + ", onlineMode=" + this.isOnlineMode() + ")";
+  }
+
+  public JoinGamePacket() {
+  }
+
+  public JoinGamePacket(final int entityId, final int gamemode, final int previousGamemode, final int viewDistance, final int simulationDistance, final int difficulty, final int maxPlayers, final int portalCooldown, final int seaLevel, final String[] levelNames, final String levelName, final String levelType, final DimensionType dimension, final long partialHashedSeed, final boolean hardcore, final boolean reducedDebugInfo, final boolean showRespawnScreen, final boolean debug, final boolean flat, final boolean limitedCrafting, final boolean secureProfile, final boolean onlineMode) {
+    this.entityId = entityId;
+    this.gamemode = gamemode;
+    this.previousGamemode = previousGamemode;
+    this.viewDistance = viewDistance;
+    this.simulationDistance = simulationDistance;
+    this.difficulty = difficulty;
+    this.maxPlayers = maxPlayers;
+    this.portalCooldown = portalCooldown;
+    this.seaLevel = seaLevel;
+    this.levelNames = levelNames;
+    this.levelName = levelName;
+    this.levelType = levelType;
+    this.dimension = dimension;
+    this.partialHashedSeed = partialHashedSeed;
+    this.hardcore = hardcore;
+    this.reducedDebugInfo = reducedDebugInfo;
+    this.showRespawnScreen = showRespawnScreen;
+    this.debug = debug;
+    this.flat = flat;
+    this.limitedCrafting = limitedCrafting;
+    this.secureProfile = secureProfile;
+    this.onlineMode = onlineMode;
   }
 }
