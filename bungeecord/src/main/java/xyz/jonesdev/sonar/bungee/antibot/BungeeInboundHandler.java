@@ -67,12 +67,16 @@ final class BungeeInboundHandler extends InboundHandlerAdapter {
       if (wrappedPacket != null) {
         if (wrappedPacket instanceof Handshake) {
           final Handshake handshake = (Handshake) wrappedPacket;
-          // Remember the server ping for the server list ping check, then remove the handler
+          // Apply the server list rate limit and remember the server ping, then remove the handler
           if (handshake.getRequestedProtocol() == STATUS) {
             final HandlerBoss handlerBoss = ctx.pipeline().get(HandlerBoss.class);
             final ChannelWrapper channelWrapper = handlerBoss != null ? getChannelWrapper(handlerBoss) : null;
-            handleStatusHandshake(channelWrapper != null
-              ? channelWrapper.getRemoteAddress() : ctx.channel().remoteAddress());
+            if (!handleStatusHandshake(channelWrapper != null
+              ? channelWrapper.getRemoteAddress() : ctx.channel().remoteAddress())) {
+              packetWrapper.trySingleRelease();
+              ctx.close();
+              return;
+            }
             ctx.pipeline().remove(this);
           } else {
             handleHandshake(ctx, handshake.getHost(), handshake.getProtocolVersion());
