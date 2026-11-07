@@ -17,8 +17,6 @@
 
 package xyz.jonesdev.sonar.common.protocol.block;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 
 import java.util.function.Function;
@@ -26,9 +24,7 @@ import java.util.function.Function;
 import static xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion.*;
 
 // TODO: load mappings from a separate file
-@Getter
 @SuppressWarnings("unused")
-@RequiredArgsConstructor
 public enum BlockType {
   // Useful resources:
   // - https://github.com/PrismarineJS/minecraft-data/blob/master/data/pc/
@@ -410,4 +406,17 @@ public enum BlockType {
 
   private final Function<ProtocolVersion, Integer> id;
   private final Function<ProtocolVersion, Double> blockHeight;
+
+  public Function<ProtocolVersion, Integer> getId() {
+    return this.id;
+  }
+
+  public Function<ProtocolVersion, Double> getBlockHeight() {
+    return this.blockHeight;
+  }
+
+  private BlockType(final Function<ProtocolVersion, Integer> id, final Function<ProtocolVersion, Double> blockHeight) {
+    this.id = id;
+    this.blockHeight = blockHeight;
+  }
 }

@@ -19,9 +19,6 @@ package xyz.jonesdev.sonar.common.protocol;
 
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.packets.configuration.FinishConfigurationPacket;
@@ -834,7 +831,6 @@ public enum SonarPacketRegistry {
     }
   }
 
-  @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
   public static class ProtocolRegistry {
     private final ProtocolVersion protocolVersion;
     private final IntObjectMap<Supplier<? extends SonarPacket>> packetIdToSupplier =
@@ -854,9 +850,12 @@ public enum SonarPacketRegistry {
       }
       return packetId;
     }
+
+    private ProtocolRegistry(final ProtocolVersion protocolVersion) {
+      this.protocolVersion = protocolVersion;
+    }
   }
 
-  @ToString
   public static final class PacketMapping {
     private final int packetId;
     private final ProtocolVersion protocolVersion;
@@ -869,7 +868,14 @@ public enum SonarPacketRegistry {
       this.protocolVersion = protocolVersion;
       this.encodeOnly = encodeOnly;
     }
+
+    @java.lang.Override
+    public java.lang.String toString() {
+      return "SonarPacketRegistry.PacketMapping(packetId=" + this.packetId + ", protocolVersion=" + this.protocolVersion + ", encodeOnly=" + this.encodeOnly + ")";
   }
+  }
+
+  @NotNull
 
   private static @NotNull PacketMapping map(final int packetId,
                                             final ProtocolVersion protocolVersion,

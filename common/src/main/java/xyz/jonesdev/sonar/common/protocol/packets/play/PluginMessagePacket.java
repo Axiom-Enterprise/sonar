@@ -18,16 +18,12 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.Getter;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
-@Getter
-@ToString
 public final class PluginMessagePacket implements SonarPacket {
   private String channel;
   private byte[] data;
@@ -68,5 +64,18 @@ public final class PluginMessagePacket implements SonarPacket {
   @Override
   public int expectedMaxLength(final ProtocolVersion protocolVersion) {
     return Short.MAX_VALUE; // vanilla size limit
+  }
+
+  public String getChannel() {
+    return this.channel;
+  }
+
+  public byte[] getData() {
+    return this.data;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "PluginMessagePacket(channel=" + this.getChannel() + ", data=" + java.util.Arrays.toString(this.getData()) + ")";
   }
 }

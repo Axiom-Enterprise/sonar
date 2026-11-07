@@ -19,13 +19,11 @@ package xyz.jonesdev.sonar.common.boot;
 
 import com.alessiodp.libby.Library;
 import com.alessiodp.libby.LibraryManager;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.SonarPlatform;
 
-@UtilityClass
 public class LibraryLoader {
-  public void loadLibraries(final @NotNull LibraryManager libraryManager, final @NotNull SonarPlatform platform) {
+  public static void loadLibraries(final @NotNull LibraryManager libraryManager, final @NotNull final SonarPlatform platform) {
     libraryManager.addMavenCentral();
     libraryManager.addJitPack();
     libraryManager.loadLibraries(
@@ -92,7 +90,7 @@ public class LibraryLoader {
     }
   }
 
-  private @NotNull Library adventureLibrary(final @NotNull String artifactId, final boolean resolveTransitive) {
+  private static @NotNull Library adventureLibrary(final @NotNull String artifactId, final boolean resolveTransitive) {
     final Library.Builder builder = Library.builder()
       .groupId("net{}kyori")
       .artifactId(artifactId)
@@ -104,5 +102,9 @@ public class LibraryLoader {
         .excludeTransitiveDependency("com.google.code.gson", "gson");
     }
     return builder.build();
+  }
+
+  private LibraryLoader() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

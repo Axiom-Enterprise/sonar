@@ -17,8 +17,6 @@
 
 package xyz.jonesdev.sonar.common.protocol.entity;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 
 import java.util.function.Function;
@@ -26,8 +24,6 @@ import java.util.function.Function;
 import static xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion.*;
 
 // TODO: load mappings from a separate file
-@Getter
-@RequiredArgsConstructor
 public enum EntityType {
   // Useful resources:
   // - https://github.com/PrismarineJS/minecraft-data/blob/master/data/pc/
@@ -122,4 +118,12 @@ public enum EntityType {
   });
 
   private final Function<ProtocolVersion, Integer> id;
+
+  public Function<ProtocolVersion, Integer> getId() {
+    return this.id;
+  }
+
+  private EntityType(final Function<ProtocolVersion, Integer> id) {
+    this.id = id;
+  }
 }

@@ -18,21 +18,16 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetPlayerPositionPacket implements SonarPacket {
-  private double x, y, z;
-  private boolean onGround, horizontalCollision;
+  private double x;
+  private double y;
+  private double z;
+  private boolean onGround;
+  private boolean horizontalCollision;
 
   @Override
   public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
@@ -65,5 +60,41 @@ public final class SetPlayerPositionPacket implements SonarPacket {
   @Override
   public int expectedMinLength(final ProtocolVersion protocolVersion) {
     return 25;
+  }
+
+  public double getX() {
+    return this.x;
+  }
+
+  public double getY() {
+    return this.y;
+  }
+
+  public double getZ() {
+    return this.z;
+  }
+
+  public boolean isOnGround() {
+    return this.onGround;
+  }
+
+  public boolean isHorizontalCollision() {
+    return this.horizontalCollision;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetPlayerPositionPacket(x=" + this.getX() + ", y=" + this.getY() + ", z=" + this.getZ() + ", onGround=" + this.isOnGround() + ", horizontalCollision=" + this.isHorizontalCollision() + ")";
+  }
+
+  public SetPlayerPositionPacket() {
+  }
+
+  public SetPlayerPositionPacket(final double x, final double y, final double z, final boolean onGround, final boolean horizontalCollision) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.onGround = onGround;
+    this.horizontalCollision = horizontalCollision;
   }
 }

@@ -17,8 +17,6 @@
 
 package xyz.jonesdev.sonar.captcha.filters;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -26,8 +24,6 @@ import java.awt.geom.CubicCurve2D;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-@Getter
-@RequiredArgsConstructor
 public final class CurvesOverlayFilter {
   private final int amount;
 
@@ -58,5 +54,13 @@ public final class CurvesOverlayFilter {
       // Draw a cubic curve instead of a straight line
       graphics.draw(new CubicCurve2D.Float(x1, y1, ctrlX1, ctrlY1, ctrlX2, ctrlY2, x2, y2));
     }
+  }
+
+  public int getAmount() {
+    return this.amount;
+  }
+
+  public CurvesOverlayFilter(final int amount) {
+    this.amount = amount;
   }
 }

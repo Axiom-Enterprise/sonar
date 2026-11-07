@@ -17,11 +17,7 @@
 
 package xyz.jonesdev.sonar.common.protocol.dimension;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
 public enum DimensionType {
   OVERWORLD("minecraft:overworld", 0, 0),
   @Deprecated
@@ -30,5 +26,24 @@ public enum DimensionType {
   THE_END("minecraft:the_end", 1, 2);
 
   private final String key;
-  private final int legacyId, id;
+  private final int legacyId;
+  private final int id;
+
+  public String getKey() {
+    return this.key;
+  }
+
+  public int getLegacyId() {
+    return this.legacyId;
+  }
+
+  public int getId() {
+    return this.id;
+  }
+
+  private DimensionType(final String key, final int legacyId, final int id) {
+    this.key = key;
+    this.legacyId = legacyId;
+    this.id = id;
+  }
 }

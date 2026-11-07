@@ -18,18 +18,10 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public final class EntityAnimationPacket implements SonarPacket {
   private int entityId;
   private Type type;
@@ -54,5 +46,29 @@ public final class EntityAnimationPacket implements SonarPacket {
     CRITICAL_HIT,
     MAGIC_CRITICAL_HIT
     // unknown (102), crouch (104), uncrouch(105) only exist on 1.7 and unused here
+  }
+
+  public int getEntityId() {
+    return this.entityId;
+  }
+
+  public Type getType() {
+    return this.type;
+  }
+
+  public void setEntityId(final int entityId) {
+    this.entityId = entityId;
+  }
+
+  public void setType(final Type type) {
+    this.type = type;
+  }
+
+  public EntityAnimationPacket() {
+  }
+
+  public EntityAnimationPacket(final int entityId, final Type type) {
+    this.entityId = entityId;
+    this.type = type;
   }
 }

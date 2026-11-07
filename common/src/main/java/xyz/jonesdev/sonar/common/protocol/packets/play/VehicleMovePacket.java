@@ -18,21 +18,16 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class VehicleMovePacket implements SonarPacket {
-  private double x, y, z;
-  private float yaw, pitch;
+  private double x;
+  private double y;
+  private double z;
+  private float yaw;
+  private float pitch;
   private boolean onGround;
 
   @Override
@@ -50,5 +45,46 @@ public final class VehicleMovePacket implements SonarPacket {
     if (protocolVersion.greaterThanOrEquals(ProtocolVersion.MINECRAFT_1_21_4)) {
       onGround = byteBuf.readBoolean();
     }
+  }
+
+  public double getX() {
+    return this.x;
+  }
+
+  public double getY() {
+    return this.y;
+  }
+
+  public double getZ() {
+    return this.z;
+  }
+
+  public float getYaw() {
+    return this.yaw;
+  }
+
+  public float getPitch() {
+    return this.pitch;
+  }
+
+  public boolean isOnGround() {
+    return this.onGround;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "VehicleMovePacket(x=" + this.getX() + ", y=" + this.getY() + ", z=" + this.getZ() + ", yaw=" + this.getYaw() + ", pitch=" + this.getPitch() + ", onGround=" + this.isOnGround() + ")";
+  }
+
+  public VehicleMovePacket() {
+  }
+
+  public VehicleMovePacket(final double x, final double y, final double z, final float yaw, final float pitch, final boolean onGround) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.yaw = yaw;
+    this.pitch = pitch;
+    this.onGround = onGround;
   }
 }
