@@ -108,7 +108,7 @@ public final class SonarPacketPreparer {
   public static final SonarPacket TAGS_UPDATE_26_1 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_1);
   public static final SonarPacket TAGS_UPDATE_26_2 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_2);
   public static final SonarPacket TAGS_UPDATE_26_3 = UpdateTagsPacket.of(DimensionRegistry.TAGS_26_3);
-  public final SonarPacket START_WRITING_CHUNKS = new GameEventPacket(13, 0);
+  public static final SonarPacket START_WRITING_CHUNKS = new GameEventPacket(13, 0);
   public static final SonarPacket INVALID_HELD_ITEM_SLOT = new SetHeldItemPacket(-1);
   public static final SonarPacket RANDOM_KEEP_ALIVE = new SonarPacketSnapshot(new KeepAlivePacket(RANDOM.nextInt()));
   public static final SonarPacket SPAWN_BOAT_ENTITY = new SonarPacketSnapshot(new SpawnEntityPacket(
