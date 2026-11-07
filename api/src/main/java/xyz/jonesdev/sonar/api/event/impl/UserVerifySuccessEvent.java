@@ -17,15 +17,22 @@
 
 package xyz.jonesdev.sonar.api.event.impl;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.event.SonarEvent;
 
-@Getter
-@ToString
-@RequiredArgsConstructor
 public final class UserVerifySuccessEvent implements SonarEvent {
   private final SonarUser user;
+
+  public SonarUser getUser() {
+    return this.user;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "UserVerifySuccessEvent(user=" + this.getUser() + ")";
+  }
+
+  public UserVerifySuccessEvent(final SonarUser user) {
+    this.user = user;
+  }
 }

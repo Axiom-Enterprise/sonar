@@ -18,10 +18,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
@@ -30,16 +26,16 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
 import java.util.UUID;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SpawnEntityPacket implements SonarPacket {
   private int entityId;
   private EntityType entityType;
-  private double x, y, z;
+  private double x;
+  private double y;
+  private double z;
   private int data;
-  private double velocityX, velocityY, velocityZ;
+  private double velocityX;
+  private double velocityY;
+  private double velocityZ;
 
   @Override
   public void encode(final ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) throws Exception {
@@ -119,5 +115,61 @@ public final class SpawnEntityPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getEntityId() {
+    return this.entityId;
+  }
+
+  public EntityType getEntityType() {
+    return this.entityType;
+  }
+
+  public double getX() {
+    return this.x;
+  }
+
+  public double getY() {
+    return this.y;
+  }
+
+  public double getZ() {
+    return this.z;
+  }
+
+  public int getData() {
+    return this.data;
+  }
+
+  public double getVelocityX() {
+    return this.velocityX;
+  }
+
+  public double getVelocityY() {
+    return this.velocityY;
+  }
+
+  public double getVelocityZ() {
+    return this.velocityZ;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SpawnEntityPacket(entityId=" + this.getEntityId() + ", entityType=" + this.getEntityType() + ", x=" + this.getX() + ", y=" + this.getY() + ", z=" + this.getZ() + ", data=" + this.getData() + ", velocityX=" + this.getVelocityX() + ", velocityY=" + this.getVelocityY() + ", velocityZ=" + this.getVelocityZ() + ")";
+  }
+
+  public SpawnEntityPacket() {
+  }
+
+  public SpawnEntityPacket(final int entityId, final EntityType entityType, final double x, final double y, final double z, final int data, final double velocityX, final double velocityY, final double velocityZ) {
+    this.entityId = entityId;
+    this.entityType = entityType;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.data = data;
+    this.velocityX = velocityX;
+    this.velocityY = velocityY;
+    this.velocityZ = velocityZ;
   }
 }

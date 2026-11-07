@@ -21,8 +21,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.DecoderException;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
@@ -30,11 +28,9 @@ import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
 import static xyz.jonesdev.sonar.common.protocol.SonarPacketPreparer.maxTotalPacketsSent;
 
-@RequiredArgsConstructor
 public final class SonarPacketDecoder extends ChannelInboundHandlerAdapter {
   private final ProtocolVersion protocolVersion;
   private SonarPacketRegistry.ProtocolRegistry registry;
-  @Setter
   private SonarPacketListener listener;
   private int totalPacketsSent;
 
@@ -109,5 +105,13 @@ public final class SonarPacketDecoder extends ChannelInboundHandlerAdapter {
       throw ProtocolUtil.DEBUG ? new DecoderException("Packet too small: " + packetSize + " min: " + expectedMinLen)
         : QuietDecoderException.INSTANCE;
     }
+  }
+
+  public SonarPacketDecoder(final ProtocolVersion protocolVersion) {
+    this.protocolVersion = protocolVersion;
+  }
+
+  public void setListener(final SonarPacketListener listener) {
+    this.listener = listener;
   }
 }

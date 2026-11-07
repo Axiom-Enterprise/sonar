@@ -19,7 +19,6 @@ package xyz.jonesdev.sonar.paper;
 
 import com.alessiodp.libby.PaperLibraryManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
@@ -36,7 +35,6 @@ import xyz.jonesdev.sonar.common.boot.SonarBootstrap;
 
 import java.util.UUID;
 
-@Getter
 public final class SonarPaper extends SonarBootstrap<SonarPaperPlugin> {
   private final LoggerWrapper logger = new LoggerWrapper() {
 
@@ -113,5 +111,9 @@ public final class SonarPaper extends SonarBootstrap<SonarPaperPlugin> {
     if (metrics != null) {
       metrics.shutdown();
     }
+  }
+
+  public Metrics getMetrics() {
+    return this.metrics;
   }
 }

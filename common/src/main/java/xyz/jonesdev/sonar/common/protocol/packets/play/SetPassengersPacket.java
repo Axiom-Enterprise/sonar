@@ -18,21 +18,14 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetPassengersPacket implements SonarPacket {
-  private int entityId, passengerId;
+  private int entityId;
+  private int passengerId;
 
   @Override
   public void encode(final ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) throws Exception {
@@ -53,5 +46,26 @@ public final class SetPassengersPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getEntityId() {
+    return this.entityId;
+  }
+
+  public int getPassengerId() {
+    return this.passengerId;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetPassengersPacket(entityId=" + this.getEntityId() + ", passengerId=" + this.getPassengerId() + ")";
+  }
+
+  public SetPassengersPacket() {
+  }
+
+  public SetPassengersPacket(final int entityId, final int passengerId) {
+    this.entityId = entityId;
+    this.passengerId = passengerId;
   }
 }

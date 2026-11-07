@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.notification;
 
-import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -31,7 +30,6 @@ import java.util.UUID;
 import static xyz.jonesdev.sonar.api.Sonar.DECIMAL_FORMAT;
 import static xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler.*;
 
-@Getter
 public final class ChatNotificationHandler extends NotificationHandler {
 
   @Override

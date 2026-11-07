@@ -19,8 +19,6 @@ package xyz.jonesdev.sonar.captcha;
 
 import com.jhlabs.image.FBMFilter;
 import com.jhlabs.image.SmearFilter;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
@@ -38,8 +36,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
-@Getter
-@RequiredArgsConstructor
 public final class StandardCaptchaGenerator implements CaptchaGenerator {
   private static final CurvesOverlayFilter CURVES = new CurvesOverlayFilter(3);
   //private static final CircleInverseFilter CIRCLES = new CircleInverseFilter(1, 30, 10);
@@ -68,7 +64,8 @@ public final class StandardCaptchaGenerator implements CaptchaGenerator {
     }
   }
 
-  private final int width = 128, height = 128;
+  private final int width = 128;
+  private final int height = 128;
   private final @Nullable File background;
   private @Nullable BufferedImage backgroundImage;
 
@@ -169,5 +166,27 @@ public final class StandardCaptchaGenerator implements CaptchaGenerator {
     final Shape strokedShape = new BasicStroke(width).createStrokedShape(shape);
 
     graphics.fill(translation.createTransformedShape(strokedShape));
+  }
+
+  public int getWidth() {
+    return this.width;
+  }
+
+  public int getHeight() {
+    return this.height;
+  }
+
+  @Nullable
+  public File getBackground() {
+    return this.background;
+  }
+
+  @Nullable
+  public BufferedImage getBackgroundImage() {
+    return this.backgroundImage;
+  }
+
+  public StandardCaptchaGenerator(@Nullable final File background) {
+    this.background = background;
   }
 }

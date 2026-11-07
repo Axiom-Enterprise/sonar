@@ -19,9 +19,6 @@ package xyz.jonesdev.sonar.api.update;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 
@@ -34,13 +31,11 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@UtilityClass
-public class UpdateChecker {
-  private final ExecutorService ASYNC_EXECUTOR = Executors.newSingleThreadExecutor();
-  @Getter
-  private CheckResult lastCheckResult = CheckResult.UNRESOLVED;
+public final class UpdateChecker {
+  private static final ExecutorService ASYNC_EXECUTOR = Executors.newSingleThreadExecutor();
+  private static CheckResult lastCheckResult = CheckResult.UNRESOLVED;
 
-  public void checkForUpdates() {
+  public static void checkForUpdates() {
     ASYNC_EXECUTOR.execute(() -> {
       try {
         final URL url = new URL("https://api.github.com/repos/jonesdevelopment/sonar/releases/latest");
@@ -71,7 +66,7 @@ public class UpdateChecker {
     });
   }
 
-  private @NotNull JsonObject parseJson(final @NotNull HttpsURLConnection urlConnection) throws IOException {
+  private static @NotNull JsonObject parseJson(final @NotNull HttpsURLConnection urlConnection) throws IOException {
     try (final InputStream inputStream = urlConnection.getInputStream();
          final InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
          final BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
@@ -81,7 +76,7 @@ public class UpdateChecker {
     }
   }
 
-  private @NotNull HttpsURLConnection prepareConnection(final @NotNull URL url) throws Exception {
+  private static @NotNull HttpsURLConnection prepareConnection(final @NotNull URL url) throws Exception {
     final HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
     // Set connection timeout
     urlConnection.setConnectTimeout(15000);
@@ -95,7 +90,7 @@ public class UpdateChecker {
     return urlConnection;
   }
 
-  private int convertVersion(final @NotNull String version) throws NumberFormatException, IllegalStateException {
+  private static int convertVersion(final @NotNull String version) throws NumberFormatException, IllegalStateException {
     final String[] convertedParts = version.split("\\.");
     // Validate the length of the converted parts
     if (convertedParts.length != 3) {
@@ -109,9 +104,7 @@ public class UpdateChecker {
     return convertedMajor + convertedMinor + patch; // sum the converted version parts
   }
 
-  @Getter
-  @RequiredArgsConstructor
-  public enum CheckResult {
+  public static enum CheckResult {
     API_ERROR("api-error"),
     OUTDATED_VERSION("outdated-version"),
     UNSTABLE_VERSION("unstable-version"),
@@ -119,5 +112,21 @@ public class UpdateChecker {
     UNRESOLVED(null);
 
     private final String configKey;
+
+    public String getConfigKey() {
+      return this.configKey;
+    }
+
+    private CheckResult(final String configKey) {
+      this.configKey = configKey;
+    }
+  }
+
+  private UpdateChecker() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+  }
+
+  public static CheckResult getLastCheckResult() {
+    return UpdateChecker.lastCheckResult;
   }
 }

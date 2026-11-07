@@ -19,8 +19,6 @@ package xyz.jonesdev.sonar.bungee.antibot;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import lombok.experimental.UtilityClass;
-import lombok.val;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.netty.PipelineUtils;
 import net.md_5.bungee.protocol.channel.BungeeChannelInitializer;
@@ -34,9 +32,8 @@ import java.lang.reflect.Field;
 import static net.md_5.bungee.netty.PipelineUtils.PACKET_DECODER;
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.SONAR_PACKET_HANDLER;
 
-@UtilityClass
-public class BungeeInjector {
-  public void inject() {
+public final class BungeeInjector {
+  public static void inject() {
     try {
       final Field childField;
 
@@ -60,7 +57,7 @@ public class BungeeInjector {
   private static void injectOnOldBungeeCord(final @NotNull Field childField) throws Exception {
     // Make sure to store the original channel initializer
     //noinspection unchecked
-    val originalInitializer = (ChannelInitializer<Channel>) childField.get(null);
+    final var originalInitializer = (ChannelInitializer<Channel>) childField.get(null);
     final ChannelInitializer<Channel> injectedInitializer = new SonarInjectedChannelInitializer(
       originalInitializer, pipeline -> pipeline.addAfter(PACKET_DECODER, SONAR_PACKET_HANDLER,
       new BungeeInboundHandler()));
@@ -92,5 +89,9 @@ public class BungeeInjector {
         return true;
       });
     ProxyServer.getInstance().unsafe().setFrontendChannelInitializer(newInitializer);
+  }
+
+  private BungeeInjector() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

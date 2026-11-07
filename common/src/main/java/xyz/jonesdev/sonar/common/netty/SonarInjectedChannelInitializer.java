@@ -20,7 +20,6 @@ package xyz.jonesdev.sonar.common.netty;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.SonarPlatform;
@@ -35,7 +34,6 @@ import java.util.function.Consumer;
 
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.SONAR_INBOUND_HANDLER;
 
-@RequiredArgsConstructor
 public final class SonarInjectedChannelInitializer extends ChannelInitializer<Channel> {
   private static final MethodHandle INIT_CHANNEL_METHOD;
 
@@ -80,5 +78,16 @@ public final class SonarInjectedChannelInitializer extends ChannelInitializer<Ch
         channel.pipeline().addFirst(SONAR_INBOUND_HANDLER, inboundHandler);
       }
     }
+  }
+
+  public SonarInjectedChannelInitializer(@NotNull final ChannelInitializer<Channel> originalChannelInitializer, @NotNull final Consumer<ChannelPipeline> sonarPipelineInjector) {
+    if (originalChannelInitializer == null) {
+      throw new java.lang.NullPointerException("originalChannelInitializer is marked non-null but is null");
+    }
+    if (sonarPipelineInjector == null) {
+      throw new java.lang.NullPointerException("sonarPipelineInjector is marked non-null but is null");
+    }
+    this.originalChannelInitializer = originalChannelInitializer;
+    this.sonarPipelineInjector = sonarPipelineInjector;
   }
 }

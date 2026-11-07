@@ -26,7 +26,6 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
 import io.netty.util.AttributeKey;
 import io.netty.util.Version;
-import lombok.experimental.UtilityClass;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.BinaryTagType;
 import org.jetbrains.annotations.NotNull;
@@ -39,8 +38,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 // https://github.com/PaperMC/Velocity/blob/dev/3.0.0/proxy/src/main/java/com/velocitypowered/proxy/protocol/ProtocolUtils.java
-@UtilityClass
-public class ProtocolUtil {
+public final class ProtocolUtil {
   public static final boolean DEBUG = Boolean.getBoolean("sonar.debug-traces");
   private static final int[] VAR_INT_LENGTHS = new int[65];
 
@@ -114,7 +112,7 @@ public class ProtocolUtil {
     }
   }
 
-  private void writeVarIntFull(final @NotNull ByteBuf byteBuf, final int value) {
+  private static void writeVarIntFull(final @NotNull ByteBuf byteBuf, final int value) {
     // See https://steinborn.me/posts/performance/how-fast-can-you-write-a-varint/
     if ((value & (0xFFFFFFFF << 7)) == 0) {
       byteBuf.writeByte(value);
@@ -149,7 +147,7 @@ public class ProtocolUtil {
     }
   }
 
-  private void writeVarLongFull(final @NotNull ByteBuf byteBuf, final long value) {
+  private static void writeVarLongFull(final @NotNull ByteBuf byteBuf, final long value) {
     if ((value & 0xFFFFFFFFFFFFFF80L) == 0L) {
       byteBuf.writeByte((byte) value);
     } else if ((value & 0xFFFFFFFFFFFFC000L) == 0L) {
@@ -330,9 +328,13 @@ public class ProtocolUtil {
     return ((high & 0xFF) << 15) | low;
   }
 
-  private void checkState(final boolean expression, final String message) {
+  private static void checkState(final boolean expression, final String message) {
     if (!expression) {
       throw DEBUG ? new DecoderException(message) : QuietDecoderException.INSTANCE;
     }
+  }
+
+  private ProtocolUtil() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

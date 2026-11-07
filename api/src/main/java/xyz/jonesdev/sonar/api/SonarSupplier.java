@@ -17,24 +17,26 @@
 
 package xyz.jonesdev.sonar.api;
 
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
-@UtilityClass
-public class SonarSupplier {
-  Sonar sonar;
+public final class SonarSupplier {
+  static Sonar sonar;
 
-  public void set(final @NotNull Sonar _sonar) {
+  public static void set(final @NotNull Sonar _sonar) {
     if (sonar != null) {
       throw new IllegalStateException("Sonar is already initialized");
     }
     sonar = _sonar;
   }
 
-  public Sonar get() {
+  public static Sonar get() {
     if (sonar == null) {
       throw new IllegalStateException("Sonar is not initialized yet");
     }
     return sonar;
+  }
+
+  private SonarSupplier() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

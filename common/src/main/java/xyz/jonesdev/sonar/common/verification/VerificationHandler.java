@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.verification;
 
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
@@ -38,7 +37,6 @@ import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
 import java.util.Random;
 
-@RequiredArgsConstructor
 public abstract class VerificationHandler implements SonarPacketListener {
   protected final SonarUser user;
 
@@ -150,5 +148,9 @@ public abstract class VerificationHandler implements SonarPacketListener {
     if (!state) {
       fail(failReason);
     }
+  }
+
+  public VerificationHandler(final SonarUser user) {
+    this.user = user;
   }
 }

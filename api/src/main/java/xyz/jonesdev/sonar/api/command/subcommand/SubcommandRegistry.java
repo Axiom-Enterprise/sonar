@@ -17,14 +17,12 @@
 
 package xyz.jonesdev.sonar.api.command.subcommand;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
-@Getter
 public final class SubcommandRegistry {
   private final List<Subcommand> subcommands = new Vector<>();
 
@@ -45,5 +43,9 @@ public final class SubcommandRegistry {
   @SuppressWarnings("unused")
   public void unregister(final Subcommand @NotNull ... subcommand) {
     subcommands.removeAll(Arrays.asList(subcommand));
+  }
+
+  public List<Subcommand> getSubcommands() {
+    return this.subcommands;
   }
 }

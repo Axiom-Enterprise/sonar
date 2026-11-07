@@ -18,8 +18,6 @@
 package xyz.jonesdev.sonar.common;
 
 import io.netty.channel.*;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
@@ -44,8 +42,6 @@ import java.util.concurrent.TimeUnit;
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.*;
 import static xyz.jonesdev.sonar.common.protocol.SonarPacketPreparer.*;
 
-@AllArgsConstructor
-@RequiredArgsConstructor
 public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter {
   protected @Nullable String username;
   protected ProtocolVersion protocolVersion;
@@ -72,18 +68,23 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
   }
 
   /**
-   * Remembers that the address requested the server list (status handshake);
-   * used by the server list ping check before letting new players join
+   * Applies the server list rate limit and remembers that the address requested the server list
+   * (status handshake), which is used by the server list ping check before letting new players join
    *
    * @param socketAddress The (potentially proxied) real address of the client
+   * @return {@code false} if the address requests the server list too often and the connection has to be closed
    */
-  protected static void handleStatusHandshake(final @Nullable SocketAddress socketAddress) {
+  protected static boolean handleStatusHandshake(final @Nullable SocketAddress socketAddress) {
     if (socketAddress instanceof InetSocketAddress) {
       final InetAddress inetAddress = ((InetSocketAddress) socketAddress).getAddress();
       if (inetAddress != null) {
+        if (!Sonar.get0().getAntiBot().attemptServerListRequest(inetAddress)) {
+          return false;
+        }
         Sonar.get0().getAntiBot().markServerListPing(inetAddress);
       }
     }
+    return true;
   }
 
   /**
@@ -133,6 +134,12 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
       return;
     }
 
+    // Check if the player connected using one of the allowed hostnames (server addresses)
+    if (!Sonar.get0().getAntiBot().isHostnameAllowed(handshakeHostname)) {
+      customDisconnect(ctx.channel(), invalidHostname, protocolVersion);
+      return;
+    }
+
     final String hostAddress = inetAddress.getHostAddress();
     // Check if the player (or their subnet) failed the verification too many times
     final int limit = Sonar.get0().getConfig().getVerification().getBlacklistThreshold();
@@ -143,6 +150,15 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
         customDisconnect(ctx.channel(), blacklisted, protocolVersion);
         return;
       }
+    }
+
+    final String fingerprint = FingerprintingUtil.getFingerprint(username, hostAddress);
+    final boolean alreadyVerified = Sonar.get0().getVerifiedPlayerController().getCache().contains(fingerprint);
+
+    // During a lockdown, only players that have been verified before are allowed to join
+    if (!alreadyVerified && Sonar.get0().getAntiBot().isLockdownActive()) {
+      customDisconnect(ctx.channel(), lockdown, protocolVersion);
+      return;
     }
 
     // Don't continue the verification process if the verification is disabled
@@ -166,9 +182,14 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
     }
 
     // Make sure we actually have to verify the player
-    final String fingerprint = FingerprintingUtil.getFingerprint(username, hostAddress);
-    if (Sonar.get0().getVerifiedPlayerController().getCache().contains(fingerprint)) {
+    if (alreadyVerified) {
       initialLogin(ctx.channel(), inetAddress, initialLoginAction);
+      return;
+    }
+
+    // During an attack, bots often use the same name with different numbers (e.g. Bot_123, Bot_456)
+    if (Sonar.get0().getAntiBot().isNamePatternBlocked(username)) {
+      customDisconnect(ctx.channel(), namePatternBlocked, protocolVersion);
       return;
     }
 
@@ -292,5 +313,15 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
     void accept(final @NotNull ChannelPipeline pipeline,
                 final @NotNull String name,
                 final @NotNull ChannelHandler handler);
+  }
+
+  public InboundHandlerAdapter(@Nullable final String username, final ProtocolVersion protocolVersion, @Nullable final String handshakeHostname, @Nullable final RemovalListener channelRemovalListener) {
+    this.username = username;
+    this.protocolVersion = protocolVersion;
+    this.handshakeHostname = handshakeHostname;
+    this.channelRemovalListener = channelRemovalListener;
+  }
+
+  public InboundHandlerAdapter() {
   }
 }

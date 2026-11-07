@@ -18,17 +18,19 @@
 package xyz.jonesdev.sonar.common.util;
 
 import io.netty.channel.Channel;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
-@UtilityClass
-public class EaglerUtil {
+public final class EaglerUtil {
   // Detect EaglerXServer WebSocket connections by checking for Eagler-specific pipeline handlers.
   private static final String H_EAGLER_HANDSHAKE = "eagler-handshake";
   private static final String H_EAGLER_FRAME_CODEC = "eagler-frame-codec";
 
-  public boolean isEaglerConnection(final @NotNull Channel channel) {
+  public static boolean isEaglerConnection(final @NotNull Channel channel) {
     return channel.pipeline().get(H_EAGLER_HANDSHAKE) != null
       || channel.pipeline().get(H_EAGLER_FRAME_CODEC) != null;
+  }
+
+  private EaglerUtil() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

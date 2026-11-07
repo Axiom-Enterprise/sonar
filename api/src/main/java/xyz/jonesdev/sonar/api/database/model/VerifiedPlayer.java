@@ -19,18 +19,11 @@ package xyz.jonesdev.sonar.api.database.model;
 
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Timestamp;
 
-@Getter
-@ToString
 @DatabaseTable(tableName = "sonar_fingerprints")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public final class VerifiedPlayer {
   @SuppressWarnings("unused")
   @DatabaseField(generatedId = true)
@@ -53,5 +46,25 @@ public final class VerifiedPlayer {
                         final long timestamp) {
     this.fingerprint = fingerprint;
     this.timestamp = new Timestamp(timestamp);
+  }
+
+  public int getId() {
+    return this.id;
+  }
+
+  public String getFingerprint() {
+    return this.fingerprint;
+  }
+
+  public Timestamp getTimestamp() {
+    return this.timestamp;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "VerifiedPlayer(id=" + this.getId() + ", fingerprint=" + this.getFingerprint() + ", timestamp=" + this.getTimestamp() + ")";
+  }
+
+  protected VerifiedPlayer() {
   }
 }

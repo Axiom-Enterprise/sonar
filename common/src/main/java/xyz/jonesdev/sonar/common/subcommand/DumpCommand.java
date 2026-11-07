@@ -19,7 +19,6 @@ package xyz.jonesdev.sonar.common.subcommand;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.SonarPlatform;
@@ -79,36 +78,60 @@ public final class DumpCommand extends Subcommand {
   @SuppressWarnings("unused")
   private static final class Dump {
 
-    @RequiredArgsConstructor
     private static final class Sonar {
       private final String version;
       private final SonarPlatform platform;
       private final String gitBranch;
       private final String gitCommit;
+
+      public Sonar(final String version, final SonarPlatform platform, final String gitBranch, final String gitCommit) {
+        this.version = version;
+        this.platform = platform;
+        this.gitBranch = gitBranch;
+        this.gitCommit = gitCommit;
+      }
     }
 
-    @RequiredArgsConstructor
     private static final class Runtime {
       private final int virtualCores;
       private final List<String> jvmArguments;
       private final String vmName;
       private final String vmVendor;
       private final String vmVersion;
+
+      public Runtime(final int virtualCores, final List<String> jvmArguments, final String vmName, final String vmVendor, final String vmVersion) {
+        this.virtualCores = virtualCores;
+        this.jvmArguments = jvmArguments;
+        this.vmName = vmName;
+        this.vmVendor = vmVendor;
+        this.vmVersion = vmVersion;
+      }
     }
 
-    @RequiredArgsConstructor
     private static final class Memory {
       private final String total;
       private final String max;
       private final String free;
       private final String used;
+
+      public Memory(final String total, final String max, final String free, final String used) {
+        this.total = total;
+        this.max = max;
+        this.free = free;
+        this.used = used;
+      }
     }
 
-    @RequiredArgsConstructor
     private static final class OS {
       private final String name;
       private final String arch;
       private final String version;
+
+      public OS(final String name, final String arch, final String version) {
+        this.name = name;
+        this.arch = arch;
+        this.version = version;
+      }
     }
   }
 }

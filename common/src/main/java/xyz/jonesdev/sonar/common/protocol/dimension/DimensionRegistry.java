@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.protocol.dimension;
 
-import lombok.experimental.UtilityClass;
 import net.kyori.adventure.nbt.BinaryTagIO;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.jetbrains.annotations.NotNull;
@@ -26,27 +25,26 @@ import xyz.jonesdev.sonar.api.Sonar;
 import java.io.InputStream;
 import java.util.Objects;
 
-@UtilityClass
 public final class DimensionRegistry {
-  public final CompoundBinaryTag CODEC_1_16;
-  public final CompoundBinaryTag CODEC_1_16_2;
-  public final CompoundBinaryTag CODEC_1_18_2;
-  public final CompoundBinaryTag CODEC_1_19;
-  public final CompoundBinaryTag CODEC_1_19_1;
-  public final CompoundBinaryTag CODEC_1_19_4;
-  public final CompoundBinaryTag CODEC_1_20;
-  public final CompoundBinaryTag CODEC_1_20_5;
-  public final CompoundBinaryTag CODEC_1_21;
-  public final CompoundBinaryTag CODEC_1_21_2;
-  public final CompoundBinaryTag CODEC_1_21_4;
-  public final CompoundBinaryTag CODEC_1_21_5;
-  public final CompoundBinaryTag CODEC_1_21_11;
-  public final CompoundBinaryTag CODEC_26_1;
-  public final CompoundBinaryTag CODEC_26_2;
-  public final CompoundBinaryTag CODEC_26_3;
-  public final CompoundBinaryTag TAGS_26_1;
-  public final CompoundBinaryTag TAGS_26_2;
-  public final CompoundBinaryTag TAGS_26_3;
+  public static final CompoundBinaryTag CODEC_1_16;
+  public static final CompoundBinaryTag CODEC_1_16_2;
+  public static final CompoundBinaryTag CODEC_1_18_2;
+  public static final CompoundBinaryTag CODEC_1_19;
+  public static final CompoundBinaryTag CODEC_1_19_1;
+  public static final CompoundBinaryTag CODEC_1_19_4;
+  public static final CompoundBinaryTag CODEC_1_20;
+  public static final CompoundBinaryTag CODEC_1_20_5;
+  public static final CompoundBinaryTag CODEC_1_21;
+  public static final CompoundBinaryTag CODEC_1_21_2;
+  public static final CompoundBinaryTag CODEC_1_21_4;
+  public static final CompoundBinaryTag CODEC_1_21_5;
+  public static final CompoundBinaryTag CODEC_1_21_11;
+  public static final CompoundBinaryTag CODEC_26_1;
+  public static final CompoundBinaryTag CODEC_26_2;
+  public static final CompoundBinaryTag CODEC_26_3;
+  public static final CompoundBinaryTag TAGS_26_1;
+  public static final CompoundBinaryTag TAGS_26_2;
+  public static final CompoundBinaryTag TAGS_26_3;
 
   static {
     CODEC_1_16 = getCodec("codec_1_16.nbt");
@@ -70,12 +68,16 @@ public final class DimensionRegistry {
     TAGS_26_3 = getCodec("tags_26_3.nbt");
   }
 
-  private @NotNull CompoundBinaryTag getCodec(final @NotNull String fileName) {
+  private static @NotNull CompoundBinaryTag getCodec(final @NotNull String fileName) {
     try (final InputStream inputStream = Sonar.class.getResourceAsStream("/assets/codecs/" + fileName)) {
       return BinaryTagIO.unlimitedReader().read(Objects.requireNonNull(inputStream), BinaryTagIO.Compression.GZIP);
     } catch (Throwable throwable) {
       Sonar.get0().getLogger().error("Could not load mappings for {}: {}", fileName, throwable);
       throw new IllegalStateException(throwable);
     }
+  }
+
+  private DimensionRegistry() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }
