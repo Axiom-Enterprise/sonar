@@ -18,11 +18,9 @@
 package xyz.jonesdev.sonar.common.util;
 
 import io.netty.channel.Channel;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 // https://github.com/retrooper/packetevents/blob/2.0/api/src/main/java/com/github/retrooper/packetevents/util/FakeChannelUtil.java
-@UtilityClass
 public class FakeChannelUtil {
 
   /**
@@ -31,11 +29,15 @@ public class FakeChannelUtil {
    * @param channel The channel to be checked.
    * @return true if the channel is identified as a fake channel
    */
-  public boolean isFakeChannel(final @NotNull Channel channel) {
+  public static boolean isFakeChannel(final @NotNull Channel channel) {
     final String simpleClassName = channel.getClass().getSimpleName();
     // Player spoof plugins use fake channels (e.g., Spoof Engine uses "FakeChannel")
     return "FakeChannel".equals(simpleClassName)
       || "SpoofedChannel".equals(simpleClassName)
       || "EmbeddedChannel".equals(simpleClassName);
+  }
+
+  private FakeChannelUtil() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

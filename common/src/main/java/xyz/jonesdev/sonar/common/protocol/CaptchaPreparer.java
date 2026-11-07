@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.protocol;
 
-import lombok.experimental.UtilityClass;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.event.impl.CaptchaGenerationEndEvent;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
@@ -29,15 +28,14 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@UtilityClass
-public class CaptchaPreparer {
-  private final ExecutorService PREPARATION_SERVICE = Executors.newSingleThreadExecutor();
-  private final Random RANDOM = new Random();
+public final class CaptchaPreparer {
+  private static final ExecutorService PREPARATION_SERVICE = Executors.newSingleThreadExecutor();
+  private static final Random RANDOM = new Random();
 
-  private volatile MapCaptchaInfo[] cached;
-  private volatile int preparedAmount;
+  private static volatile MapCaptchaInfo[] cached;
+  private static volatile int preparedAmount;
 
-  public void prepare() {
+  public static void prepare() {
     // Make sure we're not preparing when Sonar is already preparing answers
     if (cached != null && preparedAmount != cached.length) {
       return;
@@ -74,12 +72,16 @@ public class CaptchaPreparer {
     });
   }
 
-  public boolean isCaptchaAvailable() {
+  public static boolean isCaptchaAvailable() {
     return preparedAmount > 0 && cached != null && cached[0] != null;
   }
 
-  public MapCaptchaInfo getRandomCaptcha() {
+  public static MapCaptchaInfo getRandomCaptcha() {
     // Give the player a random CAPTCHA out of the ones that we've already prepared
     return cached[RANDOM.nextInt(preparedAmount)];
+  }
+
+  private CaptchaPreparer() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

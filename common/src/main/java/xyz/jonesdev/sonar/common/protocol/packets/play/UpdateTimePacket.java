@@ -18,19 +18,14 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public final class UpdateTimePacket implements SonarPacket {
-  private long worldAge, timeOfDay;
+  private long worldAge;
+  private long timeOfDay;
   private boolean tickDayTime;
 
   @Override
@@ -57,5 +52,26 @@ public final class UpdateTimePacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public long getWorldAge() {
+    return this.worldAge;
+  }
+
+  public long getTimeOfDay() {
+    return this.timeOfDay;
+  }
+
+  public boolean isTickDayTime() {
+    return this.tickDayTime;
+  }
+
+  public UpdateTimePacket() {
+  }
+
+  public UpdateTimePacket(final long worldAge, final long timeOfDay, final boolean tickDayTime) {
+    this.worldAge = worldAge;
+    this.timeOfDay = timeOfDay;
+    this.tickDayTime = tickDayTime;
   }
 }

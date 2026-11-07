@@ -18,19 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class KeepAlivePacket implements SonarPacket {
   private long id;
 
@@ -54,5 +46,21 @@ public final class KeepAlivePacket implements SonarPacket {
     } else {
       id = byteBuf.readInt();
     }
+  }
+
+  public long getId() {
+    return this.id;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "KeepAlivePacket(id=" + this.getId() + ")";
+  }
+
+  public KeepAlivePacket() {
+  }
+
+  public KeepAlivePacket(final long id) {
+    this.id = id;
   }
 }

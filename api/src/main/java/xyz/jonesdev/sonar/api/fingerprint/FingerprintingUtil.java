@@ -17,11 +17,9 @@
 
 package xyz.jonesdev.sonar.api.fingerprint;
 
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
-@UtilityClass
-public class FingerprintingUtil {
+public final class FingerprintingUtil {
 
   private static final long FNV_OFFSET = 0xcbf29ce484222325L;
   private static final long FNV_PRIME = 0x00000100000001B3L;
@@ -35,8 +33,12 @@ public class FingerprintingUtil {
     return hash;
   }
 
-  public @NotNull String getFingerprint(final @NotNull String username,
+  public static @NotNull String getFingerprint(final @NotNull String username,
                                         final @NotNull String hostAddress) {
     return Long.toHexString(fnv1a64(username)) + Long.toHexString(fnv1a64(hostAddress));
+  }
+
+  private FingerprintingUtil() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.verification;
 
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
@@ -40,10 +39,13 @@ public final class VehicleHandler extends VerificationHandler {
   private State state = State.WAITING;
   private State nextState;
   private int expectedKeepAliveId;
-  private int rotations, inputs, paddles, vehicleMoves;
-  private double boatMotion, boatY = IN_AIR_Y_POSITION;
+  private int rotations;
+  private int inputs;
+  private int paddles;
+  private int vehicleMoves;
+  private double boatMotion;
+  private double boatY = IN_AIR_Y_POSITION;
 
-  @RequiredArgsConstructor
   private enum State {
     WAITING(false),
     IN_BOAT(true),
@@ -52,6 +54,10 @@ public final class VehicleHandler extends VerificationHandler {
     IN_AIR_AFTER_MINECART(false);
 
     private final boolean inVehicle;
+
+    private State(final boolean inVehicle) {
+      this.inVehicle = inVehicle;
+    }
   }
 
   @Override

@@ -18,10 +18,6 @@
 package xyz.jonesdev.sonar.api.antibot;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
@@ -33,25 +29,17 @@ import java.net.InetAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AntiBot {
   public static final AntiBot INSTANCE = new AntiBot();
 
   private final ConcurrentMap<InetAddress, Integer> online = new ConcurrentHashMap<>(128);
   private final ConcurrentMap<InetAddress, Boolean> connected = new ConcurrentHashMap<>(256);
   private final LoginQueue queue = new LoginQueue();
-  @Setter
   private Cache<String, Integer> blacklist;
-  @Setter
   private long blacklistTime;
-  @Setter
   private CaptchaGenerator captchaGenerator;
-  @Setter
   private Ratelimiter<InetAddress> ratelimiter;
-  @Setter
   private Cache<InetAddress, Boolean> serverListPings;
-  @Setter
   private long serverListPingMaxAge;
 
   /**
@@ -116,5 +104,68 @@ public final class AntiBot {
     return timing == SonarConfiguration.Verification.Timing.ALWAYS
       || (timing == SonarConfiguration.Verification.Timing.DURING_ATTACK
       && Sonar.get0().getAttackTracker().getCurrentAttack() != null);
+  }
+
+  public ConcurrentMap<InetAddress, Integer> getOnline() {
+    return this.online;
+  }
+
+  public ConcurrentMap<InetAddress, Boolean> getConnected() {
+    return this.connected;
+  }
+
+  public LoginQueue getQueue() {
+    return this.queue;
+  }
+
+  public Cache<String, Integer> getBlacklist() {
+    return this.blacklist;
+  }
+
+  public long getBlacklistTime() {
+    return this.blacklistTime;
+  }
+
+  public CaptchaGenerator getCaptchaGenerator() {
+    return this.captchaGenerator;
+  }
+
+  public Ratelimiter<InetAddress> getRatelimiter() {
+    return this.ratelimiter;
+  }
+
+  public Cache<InetAddress, Boolean> getServerListPings() {
+    return this.serverListPings;
+  }
+
+  public long getServerListPingMaxAge() {
+    return this.serverListPingMaxAge;
+  }
+
+  private AntiBot() {
+  }
+
+  public void setBlacklist(final Cache<String, Integer> blacklist) {
+    this.blacklist = blacklist;
+  }
+
+  public void setBlacklistTime(final long blacklistTime) {
+    this.blacklistTime = blacklistTime;
+  }
+
+  public void setCaptchaGenerator(final CaptchaGenerator captchaGenerator) {
+    this.captchaGenerator = captchaGenerator;
+  }
+
+  public void setRatelimiter(final Ratelimiter<InetAddress> ratelimiter) {
+    this.ratelimiter = ratelimiter;
+  }
+
+  public void setServerListPings(final Cache<InetAddress, Boolean> serverListPings) {
+    this.serverListPings = serverListPings;
+  }
+
+  public void setServerListPingMaxAge(final long serverListPingMaxAge) {
+    this.serverListPingMaxAge = serverListPingMaxAge;
   }
 }

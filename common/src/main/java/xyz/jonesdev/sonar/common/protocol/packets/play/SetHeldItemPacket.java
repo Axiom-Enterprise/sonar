@@ -18,19 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetHeldItemPacket implements SonarPacket {
   private int slot;
 
@@ -46,5 +38,21 @@ public final class SetHeldItemPacket implements SonarPacket {
   @Override
   public void decode(final @NotNull ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     slot = byteBuf.readShort();
+  }
+
+  public int getSlot() {
+    return this.slot;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetHeldItemPacket(slot=" + this.getSlot() + ")";
+  }
+
+  public SetHeldItemPacket() {
+  }
+
+  public SetHeldItemPacket(final int slot) {
+    this.slot = slot;
   }
 }

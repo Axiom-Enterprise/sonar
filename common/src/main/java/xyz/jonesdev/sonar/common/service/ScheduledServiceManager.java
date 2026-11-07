@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.service;
 
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
@@ -29,15 +28,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-@UtilityClass
 public final class ScheduledServiceManager {
-  private final ScheduledExecutorService VERBOSE = createScheduledExecutor("sonar-verbose-thread");
-  private final ScheduledExecutorService DB_CLEANUP = createScheduledExecutor("sonar-db-cleanup-thread");
-  private final ScheduledExecutorService LOGIN_QUEUE = createScheduledExecutor("sonar-queue-thread");
-  private final ScheduledExecutorService STATISTICS = createScheduledExecutor("sonar-statistics-thread");
-  private final ScheduledExecutorService UPDATE_NOTIFIER = createScheduledExecutor("sonar-update-notifier");
+  private static final ScheduledExecutorService VERBOSE = createScheduledExecutor("sonar-verbose-thread");
+  private static final ScheduledExecutorService DB_CLEANUP = createScheduledExecutor("sonar-db-cleanup-thread");
+  private static final ScheduledExecutorService LOGIN_QUEUE = createScheduledExecutor("sonar-queue-thread");
+  private static final ScheduledExecutorService STATISTICS = createScheduledExecutor("sonar-statistics-thread");
+  private static final ScheduledExecutorService UPDATE_NOTIFIER = createScheduledExecutor("sonar-update-notifier");
 
-  private @NotNull ScheduledExecutorService createScheduledExecutor(final String threadName) {
+  private static @NotNull ScheduledExecutorService createScheduledExecutor(final String threadName) {
     return Executors.newSingleThreadScheduledExecutor(runnable -> {
       final Thread thread = Executors.defaultThreadFactory().newThread(runnable);
       thread.setName(threadName);
@@ -46,7 +44,7 @@ public final class ScheduledServiceManager {
     });
   }
 
-  public void start() {
+  public static void start() {
     if (Sonar.get0().getVerifiedPlayerController().getCachedDatabaseType() != SonarConfiguration.Database.Type.NONE) {
       DB_CLEANUP.scheduleAtFixedRate(() -> {
         try {
@@ -82,11 +80,15 @@ public final class ScheduledServiceManager {
     }
   }
 
-  public void stop() {
+  public static void stop() {
     DB_CLEANUP.shutdown();
     VERBOSE.shutdown();
     LOGIN_QUEUE.shutdown();
     STATISTICS.shutdown();
     UPDATE_NOTIFIER.shutdown();
+  }
+
+  private ScheduledServiceManager() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

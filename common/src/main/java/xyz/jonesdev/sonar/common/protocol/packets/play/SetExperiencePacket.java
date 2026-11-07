@@ -18,19 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetExperiencePacket implements SonarPacket {
   private float experienceBar;
   private int level;
@@ -53,5 +45,31 @@ public final class SetExperiencePacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public float getExperienceBar() {
+    return this.experienceBar;
+  }
+
+  public int getLevel() {
+    return this.level;
+  }
+
+  public int getTotalExperience() {
+    return this.totalExperience;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetExperiencePacket(experienceBar=" + this.getExperienceBar() + ", level=" + this.getLevel() + ", totalExperience=" + this.getTotalExperience() + ")";
+  }
+
+  public SetExperiencePacket() {
+  }
+
+  public SetExperiencePacket(final float experienceBar, final int level, final int totalExperience) {
+    this.experienceBar = experienceBar;
+    this.level = level;
+    this.totalExperience = totalExperience;
   }
 }

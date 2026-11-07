@@ -18,10 +18,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.login;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
@@ -30,10 +26,6 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
 import java.util.UUID;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class LoginSuccessPacket implements SonarPacket {
   private UUID uuid;
   private String username;
@@ -71,5 +63,36 @@ public final class LoginSuccessPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public UUID getUuid() {
+    return this.uuid;
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
+  public boolean isStrictErrorHandling() {
+    return this.strictErrorHandling;
+  }
+
+  public UUID getSessionId() {
+    return this.sessionId;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "LoginSuccessPacket(uuid=" + this.getUuid() + ", username=" + this.getUsername() + ", strictErrorHandling=" + this.isStrictErrorHandling() + ", sessionId=" + this.getSessionId() + ")";
+  }
+
+  public LoginSuccessPacket() {
+  }
+
+  public LoginSuccessPacket(final UUID uuid, final String username, final boolean strictErrorHandling, final UUID sessionId) {
+    this.uuid = uuid;
+    this.username = username;
+    this.strictErrorHandling = strictErrorHandling;
+    this.sessionId = sessionId;
   }
 }

@@ -18,20 +18,13 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class PaddleBoatPacket implements SonarPacket {
-  private boolean leftPaddle, rightPaddle;
+  private boolean leftPaddle;
+  private boolean rightPaddle;
 
   @Override
   public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
@@ -42,5 +35,26 @@ public final class PaddleBoatPacket implements SonarPacket {
   public void decode(final @NotNull ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) throws Exception {
     leftPaddle = byteBuf.readBoolean();
     rightPaddle = byteBuf.readBoolean();
+  }
+
+  public boolean isLeftPaddle() {
+    return this.leftPaddle;
+  }
+
+  public boolean isRightPaddle() {
+    return this.rightPaddle;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "PaddleBoatPacket(leftPaddle=" + this.isLeftPaddle() + ", rightPaddle=" + this.isRightPaddle() + ")";
+  }
+
+  public PaddleBoatPacket() {
+  }
+
+  public PaddleBoatPacket(final boolean leftPaddle, final boolean rightPaddle) {
+    this.leftPaddle = leftPaddle;
+    this.rightPaddle = rightPaddle;
   }
 }

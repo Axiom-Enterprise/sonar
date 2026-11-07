@@ -18,21 +18,15 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class PlayerInputPacket implements SonarPacket {
-  private float sideways, forward;
-  private boolean jump, sneak;
+  private float sideways;
+  private float forward;
+  private boolean jump;
+  private boolean sneak;
 
   @Override
   public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
@@ -59,5 +53,36 @@ public final class PlayerInputPacket implements SonarPacket {
       jump = (flags & 0x01) != 0;
       sneak = (flags & 0x02) != 0;
     }
+  }
+
+  public float getSideways() {
+    return this.sideways;
+  }
+
+  public float getForward() {
+    return this.forward;
+  }
+
+  public boolean isJump() {
+    return this.jump;
+  }
+
+  public boolean isSneak() {
+    return this.sneak;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "PlayerInputPacket(sideways=" + this.getSideways() + ", forward=" + this.getForward() + ", jump=" + this.isJump() + ", sneak=" + this.isSneak() + ")";
+  }
+
+  public PlayerInputPacket() {
+  }
+
+  public PlayerInputPacket(final float sideways, final float forward, final boolean jump, final boolean sneak) {
+    this.sideways = sideways;
+    this.forward = forward;
+    this.jump = jump;
+    this.sneak = sneak;
   }
 }

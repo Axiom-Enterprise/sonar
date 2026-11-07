@@ -17,10 +17,8 @@
 
 package xyz.jonesdev.sonar.api.config;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-@Getter
 public enum Language {
   SYSTEM("system"),
   AB("Abkhazian"),
@@ -217,5 +215,13 @@ public enum Language {
     }
     // Fallback to English
     return EN;
+  }
+
+  public String getName() {
+    return this.name;
+  }
+
+  public String getCode() {
+    return this.code;
   }
 }
