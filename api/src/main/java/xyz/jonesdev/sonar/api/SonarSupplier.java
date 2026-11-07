@@ -19,9 +19,8 @@ package xyz.jonesdev.sonar.api;
 
 import org.jetbrains.annotations.NotNull;
 
-public class SonarSupplier {
-  static
-  Sonar sonar;
+public final class SonarSupplier {
+  static Sonar sonar;
 
   public static void set(final @NotNull Sonar _sonar) {
     if (sonar != null) {
