@@ -22,9 +22,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.j256.ormlite.logger.Level;
 import com.j256.ormlite.logger.Logger;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.SonarPlatform;
@@ -48,13 +45,9 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 import java.io.File;
 import java.time.Duration;
 
-@Getter
-@RequiredArgsConstructor
 public abstract class SonarBootstrap<T> implements Sonar {
   private T plugin;
-  @Setter
   private ActionBarNotificationHandler actionBarNotificationHandler;
-  @Setter
   private ChatNotificationHandler chatNotificationHandler;
   private SonarConfiguration config;
   private VerifiedPlayerController verifiedPlayerController;
@@ -222,4 +215,63 @@ public abstract class SonarBootstrap<T> implements Sonar {
   }
 
   public abstract void disable();
+
+  public T getPlugin() {
+    return this.plugin;
+  }
+
+  public ActionBarNotificationHandler getActionBarNotificationHandler() {
+    return this.actionBarNotificationHandler;
+  }
+
+  public ChatNotificationHandler getChatNotificationHandler() {
+    return this.chatNotificationHandler;
+  }
+
+  public SonarConfiguration getConfig() {
+    return this.config;
+  }
+
+  public VerifiedPlayerController getVerifiedPlayerController() {
+    return this.verifiedPlayerController;
+  }
+
+  public BlacklistController getBlacklistController() {
+    return this.blacklistController;
+  }
+
+  public LibraryManager getLibraryManager() {
+    return this.libraryManager;
+  }
+
+  public SonarStatistics getStatistics() {
+    return this.statistics;
+  }
+
+  public SonarPlatform getPlatform() {
+    return this.platform;
+  }
+
+  public SubcommandRegistry getSubcommandRegistry() {
+    return this.subcommandRegistry;
+  }
+
+  public SystemTimer getLaunchTimer() {
+    return this.launchTimer;
+  }
+
+  public SonarBootstrap(final LibraryManager libraryManager, final SonarStatistics statistics, final SonarPlatform platform, final SubcommandRegistry subcommandRegistry) {
+    this.libraryManager = libraryManager;
+    this.statistics = statistics;
+    this.platform = platform;
+    this.subcommandRegistry = subcommandRegistry;
+  }
+
+  public void setActionBarNotificationHandler(final ActionBarNotificationHandler actionBarNotificationHandler) {
+    this.actionBarNotificationHandler = actionBarNotificationHandler;
+  }
+
+  public void setChatNotificationHandler(final ChatNotificationHandler chatNotificationHandler) {
+    this.chatNotificationHandler = chatNotificationHandler;
+  }
 }

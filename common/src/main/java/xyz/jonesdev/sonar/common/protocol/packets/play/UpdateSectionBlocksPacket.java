@@ -18,22 +18,15 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.protocol.block.BlockUpdate;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString(exclude = {"blockUpdates"})
 public final class UpdateSectionBlocksPacket implements SonarPacket {
-  private int sectionX, sectionZ;
+  private int sectionX;
+  private int sectionZ;
   private BlockUpdate[] blockUpdates;
 
   @Override
@@ -89,5 +82,31 @@ public final class UpdateSectionBlocksPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getSectionX() {
+    return this.sectionX;
+  }
+
+  public int getSectionZ() {
+    return this.sectionZ;
+  }
+
+  public BlockUpdate[] getBlockUpdates() {
+    return this.blockUpdates;
+  }
+
+  public UpdateSectionBlocksPacket() {
+  }
+
+  public UpdateSectionBlocksPacket(final int sectionX, final int sectionZ, final BlockUpdate[] blockUpdates) {
+    this.sectionX = sectionX;
+    this.sectionZ = sectionZ;
+    this.blockUpdates = blockUpdates;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "UpdateSectionBlocksPacket(sectionX=" + this.getSectionX() + ", sectionZ=" + this.getSectionZ() + ")";
   }
 }

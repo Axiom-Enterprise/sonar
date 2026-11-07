@@ -18,19 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class RemoveEntitiesPacket implements SonarPacket {
   private int entityId; // We only need one entityId
 
@@ -51,5 +43,21 @@ public final class RemoveEntitiesPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getEntityId() {
+    return this.entityId;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "RemoveEntitiesPacket(entityId=" + this.getEntityId() + ")";
+  }
+
+  public RemoveEntitiesPacket() {
+  }
+
+  public RemoveEntitiesPacket(final int entityId) {
+    this.entityId = entityId;
   }
 }

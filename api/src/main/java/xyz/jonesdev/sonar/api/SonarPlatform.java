@@ -18,13 +18,9 @@
 package xyz.jonesdev.sonar.api;
 
 import io.netty.channel.ChannelPipeline;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.function.Function;
 
-@Getter
-@RequiredArgsConstructor
 public enum SonarPlatform {
   BUKKIT("Bukkit", 19110, "packet_handler",
     pipeline -> pipeline.context("outbound_config") != null ? "outbound_config" : "encoder"),
@@ -39,4 +35,27 @@ public enum SonarPlatform {
   private final int metricsId;
   private final String connectionHandler;
   private final Function<ChannelPipeline, String> encoder;
+
+  public String getDisplayName() {
+    return this.displayName;
+  }
+
+  public int getMetricsId() {
+    return this.metricsId;
+  }
+
+  public String getConnectionHandler() {
+    return this.connectionHandler;
+  }
+
+  public Function<ChannelPipeline, String> getEncoder() {
+    return this.encoder;
+  }
+
+  private SonarPlatform(final String displayName, final int metricsId, final String connectionHandler, final Function<ChannelPipeline, String> encoder) {
+    this.displayName = displayName;
+    this.metricsId = metricsId;
+    this.connectionHandler = connectionHandler;
+    this.encoder = encoder;
+  }
 }

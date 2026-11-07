@@ -17,8 +17,6 @@
 
 package xyz.jonesdev.sonar.api.event;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
@@ -29,7 +27,6 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SonarEventManager {
   public static final SonarEventManager INSTANCE = new SonarEventManager();
   private static final Collection<SonarEventListener> EVENT_LISTENERS = new Vector<>(0);
@@ -79,5 +76,8 @@ public final class SonarEventManager {
     synchronized (EVENT_LISTENERS) {
       EVENT_LISTENERS.removeAll(Arrays.asList(listeners));
     }
+  }
+
+  private SonarEventManager() {
   }
 }

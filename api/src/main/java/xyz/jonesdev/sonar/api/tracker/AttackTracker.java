@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.tracker;
 
-import lombok.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
@@ -33,17 +32,12 @@ import java.util.Map;
 
 import static xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler.*;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AttackTracker {
   public static final AttackTracker INSTANCE = new AttackTracker();
 
   private volatile @Nullable AttackStatistics currentAttack;
   private int attackThreshold;
 
-  @Getter
-  @ToString
-  @RequiredArgsConstructor
   public static final class AttackStatistics {
     private final SystemTimer duration = new SystemTimer();
     private final SystemTimer timer = new SystemTimer();
@@ -52,9 +46,54 @@ public final class AttackTracker {
     private double peakProcessCPUUsage;
     private long peakProcessMemoryUsage;
     // Calculate during-attack-statistics using their deltas
-    private int successfulVerifications, failedVerifications;
+    private int successfulVerifications;
+    private int failedVerifications;
     // Whether the webhooks have already been notified about the start of this attack
     private boolean startNotified;
+
+    public SystemTimer getDuration() {
+      return this.duration;
+    }
+
+    public SystemTimer getTimer() {
+      return this.timer;
+    }
+
+    public long getPeakJoinsPerSecond() {
+      return this.peakJoinsPerSecond;
+    }
+
+    public long getPeakConnectionsPerSecond() {
+      return this.peakConnectionsPerSecond;
+    }
+
+    public double getPeakProcessCPUUsage() {
+      return this.peakProcessCPUUsage;
+    }
+
+    public long getPeakProcessMemoryUsage() {
+      return this.peakProcessMemoryUsage;
+    }
+
+    public int getSuccessfulVerifications() {
+      return this.successfulVerifications;
+    }
+
+    public int getFailedVerifications() {
+      return this.failedVerifications;
+    }
+
+    public boolean isStartNotified() {
+      return this.startNotified;
+    }
+
+    @java.lang.Override
+    public java.lang.String toString() {
+      return "AttackTracker.AttackStatistics(duration=" + this.getDuration() + ", timer=" + this.getTimer() + ", peakJoinsPerSecond=" + this.getPeakJoinsPerSecond() + ", peakConnectionsPerSecond=" + this.getPeakConnectionsPerSecond() + ", peakProcessCPUUsage=" + this.getPeakProcessCPUUsage() + ", peakProcessMemoryUsage=" + this.getPeakProcessMemoryUsage() + ", successfulVerifications=" + this.getSuccessfulVerifications() + ", failedVerifications=" + this.getFailedVerifications() + ", startNotified=" + this.isStartNotified() + ")";
+    }
+
+    public AttackStatistics() {
+    }
   }
 
   public void checkIfUnderAttack() {
@@ -228,5 +267,17 @@ public final class AttackTracker {
       data.put("total-success", verified);
       genericWebhook.post(GenericWebhook.ATTACK_END, data);
     }
+  }
+
+  @Nullable
+  public AttackStatistics getCurrentAttack() {
+    return this.currentAttack;
+  }
+
+  public int getAttackThreshold() {
+    return this.attackThreshold;
+  }
+
+  private AttackTracker() {
   }
 }

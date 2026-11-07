@@ -18,18 +18,12 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ComponentHolder;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public final class DisconnectPacket implements SonarPacket {
   private @NotNull ComponentHolder componentHolder;
   private boolean duringLogin;
@@ -48,5 +42,25 @@ public final class DisconnectPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  @NotNull
+  public ComponentHolder getComponentHolder() {
+    return this.componentHolder;
+  }
+
+  public boolean isDuringLogin() {
+    return this.duringLogin;
+  }
+
+  public DisconnectPacket() {
+  }
+
+  public DisconnectPacket(@NotNull final ComponentHolder componentHolder, final boolean duringLogin) {
+    if (componentHolder == null) {
+      throw new java.lang.NullPointerException("componentHolder is marked non-null but is null");
+    }
+    this.componentHolder = componentHolder;
+    this.duringLogin = duringLogin;
   }
 }

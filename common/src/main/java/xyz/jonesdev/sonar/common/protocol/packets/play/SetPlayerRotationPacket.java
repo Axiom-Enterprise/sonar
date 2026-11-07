@@ -18,21 +18,15 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetPlayerRotationPacket implements SonarPacket {
-  private float yaw, pitch;
-  private boolean onGround, horizontalCollision;
+  private float yaw;
+  private float pitch;
+  private boolean onGround;
+  private boolean horizontalCollision;
 
   @Override
   public void encode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
@@ -50,5 +44,36 @@ public final class SetPlayerRotationPacket implements SonarPacket {
     } else {
       onGround = byteBuf.readBoolean();
     }
+  }
+
+  public float getYaw() {
+    return this.yaw;
+  }
+
+  public float getPitch() {
+    return this.pitch;
+  }
+
+  public boolean isOnGround() {
+    return this.onGround;
+  }
+
+  public boolean isHorizontalCollision() {
+    return this.horizontalCollision;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetPlayerRotationPacket(yaw=" + this.getYaw() + ", pitch=" + this.getPitch() + ", onGround=" + this.isOnGround() + ", horizontalCollision=" + this.isHorizontalCollision() + ")";
+  }
+
+  public SetPlayerRotationPacket() {
+  }
+
+  public SetPlayerRotationPacket(final float yaw, final float pitch, final boolean onGround, final boolean horizontalCollision) {
+    this.yaw = yaw;
+    this.pitch = pitch;
+    this.onGround = onGround;
+    this.horizontalCollision = horizontalCollision;
   }
 }

@@ -22,7 +22,6 @@ import com.velocitypowered.proxy.network.ConnectionManager;
 import com.velocitypowered.proxy.network.ServerChannelInitializerHolder;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import lombok.experimental.UtilityClass;
 import xyz.jonesdev.sonar.common.netty.SonarInjectedChannelInitializer;
 import xyz.jonesdev.sonar.common.util.exception.ReflectiveOperationException;
 
@@ -31,10 +30,9 @@ import java.lang.reflect.Field;
 import static com.velocitypowered.proxy.network.Connections.MINECRAFT_DECODER;
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.SONAR_PACKET_HANDLER;
 
-@UtilityClass
-public class VelocityInjector {
-  private final Field CONNECTION_MANAGER_FIELD;
-  private final Field SERVER_CHANNEL_INITIALIZER_FIELD;
+public final class VelocityInjector {
+  private static final Field CONNECTION_MANAGER_FIELD;
+  private static final Field SERVER_CHANNEL_INITIALIZER_FIELD;
 
   static {
     try {
@@ -48,7 +46,7 @@ public class VelocityInjector {
     }
   }
 
-  public void inject(final Object proxyServer) {
+  public static void inject(final Object proxyServer) {
     try {
       final ConnectionManager connectionManager = (ConnectionManager) CONNECTION_MANAGER_FIELD.get(proxyServer);
 
@@ -63,5 +61,9 @@ public class VelocityInjector {
     } catch (Throwable throwable) {
       throw new ReflectiveOperationException(throwable);
     }
+  }
+
+  private VelocityInjector() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

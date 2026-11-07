@@ -18,7 +18,6 @@
 package xyz.jonesdev.sonar.bukkit;
 
 import com.alessiodp.libby.BukkitLibraryManager;
-import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bstats.bukkit.Metrics;
@@ -37,7 +36,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@Getter
 public final class SonarBukkit extends SonarBootstrap<SonarBukkitPlugin> {
   public SonarBukkit(final @NotNull SonarBukkitPlugin plugin) {
     super(plugin, SonarPlatform.BUKKIT, plugin.getDataFolder(), new BukkitLibraryManager(plugin));
@@ -124,5 +122,26 @@ public final class SonarBukkit extends SonarBootstrap<SonarBukkitPlugin> {
     if (metrics != null) {
       metrics.shutdown();
     }
+  }
+
+  /**
+   * Wrapper for Bukkit audiences
+   */
+  public BukkitAudiences getBukkitAudiences() {
+    return this.bukkitAudiences;
+  }
+
+  /**
+   * Create a wrapper for the plugin logger, so we can use it outside
+   * the velocity module.
+   * <br>
+   * We have to do this, so we can access all necessary API functions.
+   */
+  public LoggerWrapper getLogger() {
+    return this.logger;
+  }
+
+  public Metrics getMetrics() {
+    return this.metrics;
   }
 }

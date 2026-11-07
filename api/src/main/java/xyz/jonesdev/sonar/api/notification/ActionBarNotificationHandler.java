@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.notification;
 
-import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -32,7 +31,6 @@ import static xyz.jonesdev.sonar.api.Sonar.DECIMAL_FORMAT;
 import static xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler.*;
 import static xyz.jonesdev.sonar.api.timer.SystemTimer.DATE_FORMATTER;
 
-@Getter
 public class ActionBarNotificationHandler extends NotificationHandler {
   protected int animationIndex;
 
@@ -88,5 +86,9 @@ public class ActionBarNotificationHandler extends NotificationHandler {
     final var animations = Sonar.get0().getConfig().getVerboseAnimation();
     final int nextIndex = ++animationIndex % animations.size();
     return animations.toArray(new String[0])[nextIndex];
+  }
+
+  public int getAnimationIndex() {
+    return this.animationIndex;
   }
 }

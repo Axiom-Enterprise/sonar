@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.common.protocol.map;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
@@ -25,7 +24,6 @@ import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.protocol.SonarPacketSnapshot;
 import xyz.jonesdev.sonar.common.protocol.packets.play.MapDataPacket;
 
-@Getter
 public final class MapCaptchaInfo {
   private final String answer;
 
@@ -58,5 +56,17 @@ public final class MapCaptchaInfo {
       return;
     }
     user.delayedWrite(modern);
+  }
+
+  public String getAnswer() {
+    return this.answer;
+  }
+
+  public SonarPacket[] getLegacy() {
+    return this.legacy;
+  }
+
+  public SonarPacket getModern() {
+    return this.modern;
   }
 }

@@ -18,14 +18,10 @@
 package xyz.jonesdev.sonar.common.protocol.packets.handshake;
 
 import io.netty.buffer.ByteBuf;
-import lombok.Getter;
-import lombok.ToString;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString(of = {"protocolVersionId", "hostname", "port"})
 public final class HandshakePacket implements SonarPacket {
   private int protocolVersionId;
   private String hostname;
@@ -51,5 +47,26 @@ public final class HandshakePacket implements SonarPacket {
     hostname = ProtocolUtil.readString(byteBuf, MAXIMUM_HOSTNAME_LENGTH);
     port = byteBuf.readUnsignedShort();
     intent = ProtocolUtil.readVarInt(byteBuf);
+  }
+
+  public int getProtocolVersionId() {
+    return this.protocolVersionId;
+  }
+
+  public String getHostname() {
+    return this.hostname;
+  }
+
+  public int getPort() {
+    return this.port;
+  }
+
+  public int getIntent() {
+    return this.intent;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "HandshakePacket(protocolVersionId=" + this.getProtocolVersionId() + ", hostname=" + this.getHostname() + ", port=" + this.getPort() + ")";
   }
 }

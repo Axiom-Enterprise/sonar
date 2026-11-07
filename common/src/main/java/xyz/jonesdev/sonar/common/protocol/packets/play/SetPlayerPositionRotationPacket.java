@@ -18,24 +18,21 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SetPlayerPositionRotationPacket implements SonarPacket {
-  private double x, y, z;
-  private float yaw, pitch;
-  private int teleportId, relativeMask;
-  private boolean onGround, horizontalCollision;
+  private double x;
+  private double y;
+  private double z;
+  private float yaw;
+  private float pitch;
+  private int teleportId;
+  private int relativeMask;
+  private boolean onGround;
+  private boolean horizontalCollision;
   private boolean dismountVehicle;
 
   @Override
@@ -102,5 +99,66 @@ public final class SetPlayerPositionRotationPacket implements SonarPacket {
   @Override
   public int expectedMinLength(final ProtocolVersion protocolVersion) {
     return 33;
+  }
+
+  public double getX() {
+    return this.x;
+  }
+
+  public double getY() {
+    return this.y;
+  }
+
+  public double getZ() {
+    return this.z;
+  }
+
+  public float getYaw() {
+    return this.yaw;
+  }
+
+  public float getPitch() {
+    return this.pitch;
+  }
+
+  public int getTeleportId() {
+    return this.teleportId;
+  }
+
+  public int getRelativeMask() {
+    return this.relativeMask;
+  }
+
+  public boolean isOnGround() {
+    return this.onGround;
+  }
+
+  public boolean isHorizontalCollision() {
+    return this.horizontalCollision;
+  }
+
+  public boolean isDismountVehicle() {
+    return this.dismountVehicle;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SetPlayerPositionRotationPacket(x=" + this.getX() + ", y=" + this.getY() + ", z=" + this.getZ() + ", yaw=" + this.getYaw() + ", pitch=" + this.getPitch() + ", teleportId=" + this.getTeleportId() + ", relativeMask=" + this.getRelativeMask() + ", onGround=" + this.isOnGround() + ", horizontalCollision=" + this.isHorizontalCollision() + ", dismountVehicle=" + this.isDismountVehicle() + ")";
+  }
+
+  public SetPlayerPositionRotationPacket() {
+  }
+
+  public SetPlayerPositionRotationPacket(final double x, final double y, final double z, final float yaw, final float pitch, final int teleportId, final int relativeMask, final boolean onGround, final boolean horizontalCollision, final boolean dismountVehicle) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.yaw = yaw;
+    this.pitch = pitch;
+    this.teleportId = teleportId;
+    this.relativeMask = relativeMask;
+    this.onGround = onGround;
+    this.horizontalCollision = horizontalCollision;
+    this.dismountVehicle = dismountVehicle;
   }
 }

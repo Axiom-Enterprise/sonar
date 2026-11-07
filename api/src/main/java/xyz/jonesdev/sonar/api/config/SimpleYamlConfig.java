@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.config;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.simpleyaml.configuration.MemorySection;
 import org.simpleyaml.configuration.file.YamlFile;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Getter
 public final class SimpleYamlConfig {
   private final File file;
   private final YamlFile yaml;
@@ -129,5 +127,13 @@ public final class SimpleYamlConfig {
       return new ArrayList<>(0);
     }
     return yaml.getIntegerList(path);
+  }
+
+  public File getFile() {
+    return this.file;
+  }
+
+  public YamlFile getYaml() {
+    return this.yaml;
   }
 }

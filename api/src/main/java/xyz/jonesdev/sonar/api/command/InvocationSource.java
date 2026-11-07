@@ -17,16 +17,12 @@
 
 package xyz.jonesdev.sonar.api.command;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 
 import java.util.UUID;
 import java.util.function.Predicate;
 
-@Getter
-@RequiredArgsConstructor
 public final class InvocationSource {
   private final UUID uuid;
   private final Audience audience;
@@ -44,5 +40,23 @@ public final class InvocationSource {
    */
   public void sendMessage(final Component component) {
     audience.sendMessage(component);
+  }
+
+  public UUID getUuid() {
+    return this.uuid;
+  }
+
+  public Audience getAudience() {
+    return this.audience;
+  }
+
+  public Predicate<String> getPermissionFunction() {
+    return this.permissionFunction;
+  }
+
+  public InvocationSource(final UUID uuid, final Audience audience, final Predicate<String> permissionFunction) {
+    this.uuid = uuid;
+    this.audience = audience;
+    this.permissionFunction = permissionFunction;
   }
 }

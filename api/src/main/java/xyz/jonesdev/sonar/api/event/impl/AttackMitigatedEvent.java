@@ -17,15 +17,22 @@
 
 package xyz.jonesdev.sonar.api.event.impl;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import xyz.jonesdev.sonar.api.event.SonarEvent;
 import xyz.jonesdev.sonar.api.tracker.AttackTracker;
 
-@Getter
-@ToString
-@RequiredArgsConstructor
 public final class AttackMitigatedEvent implements SonarEvent {
   private final AttackTracker.AttackStatistics attackStatistics;
+
+  public AttackTracker.AttackStatistics getAttackStatistics() {
+    return this.attackStatistics;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "AttackMitigatedEvent(attackStatistics=" + this.getAttackStatistics() + ")";
+  }
+
+  public AttackMitigatedEvent(final AttackTracker.AttackStatistics attackStatistics) {
+    this.attackStatistics = attackStatistics;
+  }
 }

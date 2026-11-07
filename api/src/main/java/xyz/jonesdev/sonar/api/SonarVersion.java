@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -25,11 +24,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.jar.Manifest;
 
-@Getter
 public final class SonarVersion {
   static final SonarVersion INSTANCE = new SonarVersion();
 
-  private final String version, formatted, gitBranch, gitCommit;
+  private final String version;
+  private final String formatted;
+  private final String gitBranch;
+  private final String gitCommit;
 
   SonarVersion() {
     // No need to null-check since we'll always just throw an exception if
@@ -65,5 +66,21 @@ public final class SonarVersion {
   @Override
   public String toString() {
     return formatted;
+  }
+
+  public String getVersion() {
+    return this.version;
+  }
+
+  public String getFormatted() {
+    return this.formatted;
+  }
+
+  public String getGitBranch() {
+    return this.gitBranch;
+  }
+
+  public String getGitCommit() {
+    return this.gitCommit;
   }
 }

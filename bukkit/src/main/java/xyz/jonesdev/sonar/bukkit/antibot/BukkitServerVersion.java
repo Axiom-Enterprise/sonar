@@ -17,9 +17,7 @@
 
 package xyz.jonesdev.sonar.bukkit.antibot;
 
-import lombok.Getter;
 
-@Getter
 public enum BukkitServerVersion {
   MINECRAFT_1_7_10,
   MINECRAFT_1_8,
@@ -105,5 +103,9 @@ public enum BukkitServerVersion {
 
   BukkitServerVersion() {
     this.release = name().substring(10).replace("_", ".");
+  }
+
+  public String getRelease() {
+    return this.release;
   }
 }

@@ -18,21 +18,14 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class PlayerAbilitiesPacket implements SonarPacket {
   private int encodedFlags;
-  private float flySpeed, walkSpeed;
+  private float flySpeed;
+  private float walkSpeed;
 
   @Override
   public void encode(final @NotNull ByteBuf byteBuf, final ProtocolVersion protocolVersion) throws Exception {
@@ -44,5 +37,31 @@ public final class PlayerAbilitiesPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getEncodedFlags() {
+    return this.encodedFlags;
+  }
+
+  public float getFlySpeed() {
+    return this.flySpeed;
+  }
+
+  public float getWalkSpeed() {
+    return this.walkSpeed;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "PlayerAbilitiesPacket(encodedFlags=" + this.getEncodedFlags() + ", flySpeed=" + this.getFlySpeed() + ", walkSpeed=" + this.getWalkSpeed() + ")";
+  }
+
+  public PlayerAbilitiesPacket() {
+  }
+
+  public PlayerAbilitiesPacket(final int encodedFlags, final float flySpeed, final float walkSpeed) {
+    this.encodedFlags = encodedFlags;
+    this.flySpeed = flySpeed;
+    this.walkSpeed = walkSpeed;
   }
 }

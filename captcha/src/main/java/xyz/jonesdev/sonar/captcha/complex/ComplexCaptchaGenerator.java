@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.captcha.complex;
 
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
 import xyz.jonesdev.sonar.captcha.TTFFontProvider;
@@ -35,10 +34,10 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Random;
 
-@RequiredArgsConstructor
 public final class ComplexCaptchaGenerator implements CaptchaGenerator {
   private final File background;
-  private final int width = 128, height = 128;
+  private final int width = 128;
+  private final int height = 128;
   private BufferedImage backgroundImage;
 
   private static final Font[] FONTS = {
@@ -206,5 +205,9 @@ public final class ComplexCaptchaGenerator implements CaptchaGenerator {
 
       graphics.fillOval(x, y, radius, radius);
     }
+  }
+
+  public ComplexCaptchaGenerator(final File background) {
+    this.background = background;
   }
 }

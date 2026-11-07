@@ -18,9 +18,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
@@ -30,9 +27,6 @@ import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
 import java.util.UUID;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public final class SystemChatPacket implements SonarPacket {
   private static final int DIV_FLOOR = -Math.floorDiv(-20, 8);
 
@@ -124,5 +118,59 @@ public final class SystemChatPacket implements SonarPacket {
         }
       }
     }
+  }
+
+  public ComponentHolder getComponentHolder() {
+    return this.componentHolder;
+  }
+
+  public String getMessage() {
+    return this.message;
+  }
+
+  public void setComponentHolder(final ComponentHolder componentHolder) {
+    this.componentHolder = componentHolder;
+  }
+
+  public void setMessage(final String message) {
+    this.message = message;
+  }
+
+  @java.lang.Override
+  public boolean equals(final java.lang.Object o) {
+    if (o == this) return true;
+    if (!(o instanceof SystemChatPacket)) return false;
+    final SystemChatPacket other = (SystemChatPacket) o;
+    final java.lang.Object this$componentHolder = this.getComponentHolder();
+    final java.lang.Object other$componentHolder = other.getComponentHolder();
+    if (this$componentHolder == null ? other$componentHolder != null : !this$componentHolder.equals(other$componentHolder)) return false;
+    final java.lang.Object this$message = this.getMessage();
+    final java.lang.Object other$message = other.getMessage();
+    if (this$message == null ? other$message != null : !this$message.equals(other$message)) return false;
+    return true;
+  }
+
+  @java.lang.Override
+  public int hashCode() {
+    final int PRIME = 59;
+    int result = 1;
+    final java.lang.Object $componentHolder = this.getComponentHolder();
+    result = result * PRIME + ($componentHolder == null ? 43 : $componentHolder.hashCode());
+    final java.lang.Object $message = this.getMessage();
+    result = result * PRIME + ($message == null ? 43 : $message.hashCode());
+    return result;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "SystemChatPacket(componentHolder=" + this.getComponentHolder() + ", message=" + this.getMessage() + ")";
+  }
+
+  public SystemChatPacket() {
+  }
+
+  public SystemChatPacket(final ComponentHolder componentHolder, final String message) {
+    this.componentHolder = componentHolder;
+    this.message = message;
   }
 }

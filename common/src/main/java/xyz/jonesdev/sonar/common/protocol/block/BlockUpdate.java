@@ -17,15 +17,13 @@
 
 package xyz.jonesdev.sonar.common.protocol.block;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
-@Getter
 public final class BlockUpdate {
   private final BlockPosition position;
   private final BlockType blockType;
-  private final int legacyBlockState, blockState;
+  private final int legacyBlockState;
+  private final int blockState;
 
   public BlockUpdate(final @NotNull BlockPosition position, final BlockType blockType) {
     this.position = position;
@@ -37,10 +35,55 @@ public final class BlockUpdate {
     this.blockState = x << 8 | z << 4 | y - ((y >> 4) << 4);
   }
 
-  @Getter
-  @RequiredArgsConstructor
   public static final class BlockPosition {
-    private final int x, y, z;
-    private final int chunkX, chunkZ;
+    private final int x;
+    private final int y;
+    private final int z;
+    private final int chunkX;
+    private final int chunkZ;
+
+    public int getX() {
+      return this.x;
+    }
+
+    public int getY() {
+      return this.y;
+    }
+
+    public int getZ() {
+      return this.z;
+    }
+
+    public int getChunkX() {
+      return this.chunkX;
+    }
+
+    public int getChunkZ() {
+      return this.chunkZ;
+    }
+
+    public BlockPosition(final int x, final int y, final int z, final int chunkX, final int chunkZ) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.chunkX = chunkX;
+      this.chunkZ = chunkZ;
+    }
+  }
+
+  public BlockPosition getPosition() {
+    return this.position;
+  }
+
+  public BlockType getBlockType() {
+    return this.blockType;
+  }
+
+  public int getLegacyBlockState() {
+    return this.legacyBlockState;
+  }
+
+  public int getBlockState() {
+    return this.blockState;
   }
 }
