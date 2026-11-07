@@ -872,10 +872,8 @@ public enum SonarPacketRegistry {
     @java.lang.Override
     public java.lang.String toString() {
       return "SonarPacketRegistry.PacketMapping(packetId=" + this.packetId + ", protocolVersion=" + this.protocolVersion + ", encodeOnly=" + this.encodeOnly + ")";
+    }
   }
-  }
-
-  @NotNull
 
   private static @NotNull PacketMapping map(final int packetId,
                                             final ProtocolVersion protocolVersion,
