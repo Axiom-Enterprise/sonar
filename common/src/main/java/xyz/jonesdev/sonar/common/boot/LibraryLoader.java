@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.SonarPlatform;
 
 public class LibraryLoader {
-  public static void loadLibraries(final @NotNull LibraryManager libraryManager, final @NotNull final SonarPlatform platform) {
+  public static void loadLibraries(final @NotNull LibraryManager libraryManager, final @NotNull SonarPlatform platform) {
     libraryManager.addMavenCentral();
     libraryManager.addJitPack();
     libraryManager.loadLibraries(
