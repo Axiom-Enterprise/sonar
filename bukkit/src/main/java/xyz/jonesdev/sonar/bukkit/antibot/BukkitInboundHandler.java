@@ -111,8 +111,12 @@ final class BukkitInboundHandler extends InboundHandlerAdapter {
         final HandshakePacket handshake = (HandshakePacket) packet;
         switch (handshake.getIntent()) {
           case STATUS:
-            // Remember the server ping for the server list ping check, then remove the handler
-            handleStatusHandshake(ctx.channel().remoteAddress());
+            // Apply the server list rate limit and remember the server ping, then remove the handler
+            if (!handleStatusHandshake(ctx.channel().remoteAddress())) {
+              byteBuf.release();
+              ctx.close();
+              return;
+            }
             ctx.pipeline().remove(this);
             break;
           case LOGIN:

@@ -138,6 +138,9 @@ public final class SonarPacketPreparer {
   public static SonarPacket unsupportedVersion;
   public static SonarPacket tooManyOnlinePerIP;
   public static SonarPacket serverListPingRequired;
+  public static SonarPacket invalidHostname;
+  public static SonarPacket namePatternBlocked;
+  public static SonarPacket lockdown;
   public static SonarPacket[] xpCountdown;
   public static SonarPacket updateTime;
 
@@ -220,6 +223,9 @@ public final class SonarPacketPreparer {
     unsupportedVersion = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getUnsupportedVersion(), true));
     tooManyOnlinePerIP = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getTooManyOnlinePerIp(), true));
     serverListPingRequired = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getServerListPingRequired(), true));
+    invalidHostname = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getInvalidHostname(), true));
+    namePatternBlocked = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getNamePatternBlocked(), true));
+    lockdown = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getLockdown(), true));
 
     // Prepare update time packet
     final int timeOfDay = Sonar.get0().getConfig().getVerification().getTimeOfDay();

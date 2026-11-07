@@ -37,6 +37,12 @@ public final class AttackTracker {
 
   private volatile @Nullable AttackStatistics currentAttack;
   private int attackThreshold;
+  // Exponentially weighted moving average of the joins per second outside of attacks
+  private volatile double baselineJoinsPerSecond;
+
+  // Weight of a new sample in the baseline; this method runs every 250ms,
+  // so the baseline follows changes over roughly one minute
+  private static final double BASELINE_SMOOTHING = 0.005;
 
   public static final class AttackStatistics {
     private final SystemTimer duration = new SystemTimer();
@@ -100,7 +106,12 @@ public final class AttackTracker {
     final long joinsPerSecond = Sonar.get0().getStatistics().getLoginsPerSecond();
     final int verifyingPlayers = Sonar.get0().getAntiBot().getConnected().size();
     final int queuedPlayers = Sonar.get0().getAntiBot().getQueue().getPlayers().size();
-    final int minPlayers = Sonar.get0().getConfig().getMinPlayersForAttack();
+    final int minPlayers = getEffectiveMinPlayers();
+
+    // Only learn from normal traffic, so attacks cannot raise their own threshold
+    if (currentAttack == null) {
+      baselineJoinsPerSecond += BASELINE_SMOOTHING * (joinsPerSecond - baselineJoinsPerSecond);
+    }
 
     if (joinsPerSecond > minPlayers // Check the number of bots/joins per second.
       || verifyingPlayers > minPlayers // Check the number of verifying players.
@@ -163,6 +174,22 @@ public final class AttackTracker {
     } else {
       attackThreshold = 0;
     }
+  }
+
+  /**
+   * Returns the number of players that has to be exceeded for an attack to be detected.
+   * With the adaptive detection enabled, this is the learned baseline times the configured multiplier,
+   * but never less than the configured minimum.
+   *
+   * @return The effective minimum number of players for an attack
+   */
+  public int getEffectiveMinPlayers() {
+    final int minPlayers = Sonar.get0().getConfig().getMinPlayersForAttack();
+    if (!Sonar.get0().getConfig().isAdaptiveAttackDetection()) {
+      return minPlayers;
+    }
+    final double adaptive = Math.ceil(baselineJoinsPerSecond * Sonar.get0().getConfig().getAdaptiveAttackMultiplier());
+    return (int) Math.max(minPlayers, Math.min(adaptive, Integer.MAX_VALUE));
   }
 
   /**
@@ -276,6 +303,10 @@ public final class AttackTracker {
 
   public int getAttackThreshold() {
     return this.attackThreshold;
+  }
+
+  public double getBaselineJoinsPerSecond() {
+    return this.baselineJoinsPerSecond;
   }
 
   private AttackTracker() {

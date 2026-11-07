@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -159,6 +160,23 @@ public final class SubnetRange {
       result[i] = (byte) (result[i] & mask);
     }
     return result;
+  }
+
+  @Override
+  public boolean equals(final Object other) {
+    if (this == other) {
+      return true;
+    }
+    if (!(other instanceof SubnetRange)) {
+      return false;
+    }
+    final SubnetRange range = (SubnetRange) other;
+    return prefixLength == range.prefixLength && Arrays.equals(network, range.network);
+  }
+
+  @Override
+  public int hashCode() {
+    return 31 * Arrays.hashCode(network) + prefixLength;
   }
 
   @Override

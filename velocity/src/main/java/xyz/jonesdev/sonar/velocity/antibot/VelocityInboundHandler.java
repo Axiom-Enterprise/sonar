@@ -21,6 +21,7 @@ import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.protocol.packet.HandshakePacket;
 import com.velocitypowered.proxy.protocol.packet.ServerLoginPacket;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.common.InboundHandlerAdapter;
 
@@ -33,11 +34,15 @@ final class VelocityInboundHandler extends InboundHandlerAdapter {
   @Override
   public void channelRead(final @NotNull ChannelHandlerContext ctx, final Object msg) throws Exception {
     if (msg instanceof HandshakePacket handshake) {
-      // Remember the server ping for the server list ping check, then remove the handler
+      // Apply the server list rate limit and remember the server ping, then remove the handler
       if (handshake.getNextStatus() == STATUS) {
         final MinecraftConnection minecraftConnection = ctx.pipeline().get(MinecraftConnection.class);
-        handleStatusHandshake(minecraftConnection != null
-          ? minecraftConnection.getRemoteAddress() : ctx.channel().remoteAddress());
+        if (!handleStatusHandshake(minecraftConnection != null
+          ? minecraftConnection.getRemoteAddress() : ctx.channel().remoteAddress())) {
+          ReferenceCountUtil.release(msg);
+          ctx.close();
+          return;
+        }
         ctx.pipeline().remove(this);
       } else {
         handleHandshake(ctx, handshake.getServerAddress(), handshake.getProtocolVersion().getProtocol());
