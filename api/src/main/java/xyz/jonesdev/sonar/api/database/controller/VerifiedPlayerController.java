@@ -25,7 +25,6 @@ import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -47,16 +46,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class VerifiedPlayerController {
-  @Getter
   private final Set<String> cache = Collections.synchronizedSet(new HashSet<>());
-  @Getter
   private @Nullable ConnectionSource connectionSource;
   private Dao<VerifiedPlayer, Integer> dao;
   private QueryBuilder<VerifiedPlayer, Integer> queryBuilder;
-  @Getter
   private final @NotNull SonarConfiguration.Database.Type cachedDatabaseType;
   private final ExecutorService updateService = Executors.newSingleThreadExecutor();
-  @Getter
   private int maximumAge;
 
   public VerifiedPlayerController(final @NotNull LibraryManager libraryManager) {
@@ -255,5 +250,23 @@ public final class VerifiedPlayerController {
         exception.printStackTrace(System.err);
       }
     }
+  }
+
+  public Set<String> getCache() {
+    return this.cache;
+  }
+
+  @Nullable
+  public ConnectionSource getConnectionSource() {
+    return this.connectionSource;
+  }
+
+  @NotNull
+  public SonarConfiguration.Database.Type getCachedDatabaseType() {
+    return this.cachedDatabaseType;
+  }
+
+  public int getMaximumAge() {
+    return this.maximumAge;
   }
 }

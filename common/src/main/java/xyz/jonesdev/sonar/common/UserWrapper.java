@@ -19,10 +19,6 @@ package xyz.jonesdev.sonar.common;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.Accessors;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,10 +43,7 @@ import java.net.InetAddress;
 
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.*;
 
-@Getter
-@ToString(of = {"protocolVersion", "inetAddress", "hostname", "geyser"})
 public final class UserWrapper implements SonarUser {
-  @Accessors(fluent = true)
   private final Channel channel;
   private final InetAddress inetAddress;
   private final ProtocolVersion protocolVersion;
@@ -59,7 +52,6 @@ public final class UserWrapper implements SonarUser {
   private final boolean geyser;
   private final @Nullable String hostname;
   private final SystemTimer loginTimer;
-  @Setter
   private boolean forceCaptcha;
 
   public UserWrapper(final @NotNull ChannelHandlerContext ctx,
@@ -144,5 +136,51 @@ public final class UserWrapper implements SonarUser {
     final SonarPacketEncoder encoder = channel.pipeline().get(SonarPacketEncoder.class);
     final boolean duringLogin = encoder != null && encoder.getPacketRegistry() == SonarPacketRegistry.LOGIN;
     ProtocolUtil.closeWith(channel, protocolVersion, new DisconnectPacket(reason, duringLogin));
+  }
+
+  public Channel channel() {
+    return this.channel;
+  }
+
+  public InetAddress getInetAddress() {
+    return this.inetAddress;
+  }
+
+  public ProtocolVersion getProtocolVersion() {
+    return this.protocolVersion;
+  }
+
+  public String getFingerprint() {
+    return this.fingerprint;
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
+  public boolean isGeyser() {
+    return this.geyser;
+  }
+
+  @Nullable
+  public String getHostname() {
+    return this.hostname;
+  }
+
+  public SystemTimer getLoginTimer() {
+    return this.loginTimer;
+  }
+
+  public boolean isForceCaptcha() {
+    return this.forceCaptcha;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "UserWrapper(inetAddress=" + this.getInetAddress() + ", protocolVersion=" + this.getProtocolVersion() + ", geyser=" + this.isGeyser() + ", hostname=" + this.getHostname() + ")";
+  }
+
+  public void setForceCaptcha(final boolean forceCaptcha) {
+    this.forceCaptcha = forceCaptcha;
   }
 }

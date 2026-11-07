@@ -18,20 +18,13 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class TransactionPacket implements SonarPacket {
-  private int windowId, transactionId;
+  private int windowId;
+  private int transactionId;
   private boolean accepted;
 
   @Override
@@ -57,5 +50,31 @@ public final class TransactionPacket implements SonarPacket {
     } else {
       byteBuf.writeInt(transactionId);
     }
+  }
+
+  public int getWindowId() {
+    return this.windowId;
+  }
+
+  public int getTransactionId() {
+    return this.transactionId;
+  }
+
+  public boolean isAccepted() {
+    return this.accepted;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "TransactionPacket(windowId=" + this.getWindowId() + ", transactionId=" + this.getTransactionId() + ", accepted=" + this.isAccepted() + ")";
+  }
+
+  public TransactionPacket() {
+  }
+
+  public TransactionPacket(final int windowId, final int transactionId, final boolean accepted) {
+    this.windowId = windowId;
+    this.transactionId = transactionId;
+    this.accepted = accepted;
   }
 }

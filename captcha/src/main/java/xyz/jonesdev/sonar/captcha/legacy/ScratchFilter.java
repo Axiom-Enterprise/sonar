@@ -18,14 +18,12 @@
 package xyz.jonesdev.sonar.captcha.legacy;
 
 import com.jhlabs.image.AbstractBufferedImageOp;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-@RequiredArgsConstructor
 public final class ScratchFilter extends AbstractBufferedImageOp {
   private static final Random RANDOM = new Random();
 
@@ -58,5 +56,9 @@ public final class ScratchFilter extends AbstractBufferedImageOp {
 
     graphics.dispose();
     return src;
+  }
+
+  public ScratchFilter(final int amount) {
+    this.amount = amount;
   }
 }

@@ -18,19 +18,17 @@
 package xyz.jonesdev.sonar.api.profiler;
 
 import com.sun.management.OperatingSystemMXBean;
-import lombok.experimental.UtilityClass;
 
 import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 
-@UtilityClass
-public class SimpleProcessProfiler {
-  private final Runtime RUNTIME = Runtime.getRuntime();
-  private final OperatingSystemMXBean MX = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-  private final char[] MEMORY_UNITS = {'K', 'M', 'G', 'T', 'P', 'E'};
-  private final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#");
+public final class SimpleProcessProfiler {
+  private static final Runtime RUNTIME = Runtime.getRuntime();
+  private static final OperatingSystemMXBean MX = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+  private static final char[] MEMORY_UNITS = {'K', 'M', 'G', 'T', 'P', 'E'};
+  private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#");
 
-  public String formatMemory(final long size) {
+  public static String formatMemory(final long size) {
     if (size < 1024L) {
       return size + " B";
     }
@@ -45,63 +43,67 @@ public class SimpleProcessProfiler {
   /**
    * @return Number of available processors for the JVM
    */
-  public int getVirtualCores() {
+  public static int getVirtualCores() {
     return RUNTIME.availableProcessors();
   }
 
   /**
    * @return Current process CPU usage in percent
    */
-  public double getProcessCPUUsage() {
+  public static double getProcessCPUUsage() {
     return MX.getProcessCpuLoad() * 100;
   }
 
   /**
    * @return Current per-core process CPU usage in percent
    */
-  public double getAverageProcessCPUUsage() {
+  public static double getAverageProcessCPUUsage() {
     return getProcessCPUUsage() / getVirtualCores();
   }
 
   /**
    * @return Current system CPU usage in percent
    */
-  public double getSystemCPUUsage() {
+  public static double getSystemCPUUsage() {
     return MX.getSystemCpuLoad() * 100;
   }
 
   /**
    * @return Current per-core system CPU usage in percent
    */
-  public double getAverageSystemCPUUsage() {
+  public static double getAverageSystemCPUUsage() {
     return getSystemCPUUsage() / getVirtualCores();
   }
 
   /**
    * @return Memory (in bytes) the JVM will attempt to use
    */
-  public long getMaxMemory() {
+  public static long getMaxMemory() {
     return RUNTIME.maxMemory();
   }
 
   /**
    * @return Memory (in bytes) available to the host machine
    */
-  public long getTotalMemory() {
+  public static long getTotalMemory() {
     return RUNTIME.totalMemory();
   }
 
   /**
    * @return Memory (in bytes) the JVM can allocate
    */
-  public long getFreeMemory() {
+  public static long getFreeMemory() {
     return RUNTIME.freeMemory();
   }
 
   /**
    * @return Memory (in bytes) the JVM is using
    */
-  public long getUsedMemory() {
+  public static long getUsedMemory() {
     return getTotalMemory() - getFreeMemory();
+  }
+
+  private SimpleProcessProfiler() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 }

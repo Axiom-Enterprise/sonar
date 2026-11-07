@@ -17,15 +17,21 @@
 
 package xyz.jonesdev.sonar.api.event.impl;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
 import xyz.jonesdev.sonar.api.event.SonarEvent;
 
-@Getter
-@Setter
-@AllArgsConstructor
 public final class CaptchaGenerationStartEvent implements SonarEvent {
   private CaptchaGenerator captchaGenerator;
+
+  public CaptchaGenerator getCaptchaGenerator() {
+    return this.captchaGenerator;
+  }
+
+  public void setCaptchaGenerator(final CaptchaGenerator captchaGenerator) {
+    this.captchaGenerator = captchaGenerator;
+  }
+
+  public CaptchaGenerationStartEvent(final CaptchaGenerator captchaGenerator) {
+    this.captchaGenerator = captchaGenerator;
+  }
 }

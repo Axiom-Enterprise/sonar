@@ -19,9 +19,6 @@ allprojects {
   apply(plugin = "com.diffplug.spotless")
 
   dependencies {
-    compileOnly(rootProject.libs.lombok)
-    annotationProcessor(rootProject.libs.lombok)
-
     compileOnly(rootProject.libs.adventure.minimessage)
     compileOnly(rootProject.libs.adventure.serializer)
     compileOnly(rootProject.libs.ormlite)

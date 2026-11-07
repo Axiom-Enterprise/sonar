@@ -17,7 +17,6 @@
 
 package xyz.jonesdev.sonar.api.command.subcommand;
 
-import lombok.Getter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jetbrains.annotations.NotNull;
@@ -28,10 +27,11 @@ import xyz.jonesdev.sonar.api.command.InvocationSource;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-@Getter
 public abstract class Subcommand {
   private final @NotNull SubcommandInfo info;
-  private final String permission, aliases, arguments;
+  private final String permission;
+  private final String aliases;
+  private final String arguments;
 
   public Subcommand() {
     this.info = Objects.requireNonNull(getClass().getAnnotation(SubcommandInfo.class));
@@ -99,4 +99,21 @@ public abstract class Subcommand {
   }
 
   protected abstract void execute(final @NotNull InvocationSource source, final String @NotNull [] args);
+
+  @NotNull
+  public SubcommandInfo getInfo() {
+    return this.info;
+  }
+
+  public String getPermission() {
+    return this.permission;
+  }
+
+  public String getAliases() {
+    return this.aliases;
+  }
+
+  public String getArguments() {
+    return this.arguments;
+  }
 }

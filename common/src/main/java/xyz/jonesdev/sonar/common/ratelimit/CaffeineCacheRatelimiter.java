@@ -20,8 +20,6 @@ package xyz.jonesdev.sonar.common.ratelimit;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Ticker;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.ratelimit.Ratelimiter;
 
@@ -29,8 +27,6 @@ import java.net.InetAddress;
 import java.time.Duration;
 
 // Idea taken from Velocity
-@Setter
-@RequiredArgsConstructor
 public final class CaffeineCacheRatelimiter implements Ratelimiter<InetAddress> {
   private long timeout;
   private Cache<InetAddress, Long> expiringCache;
@@ -49,5 +45,16 @@ public final class CaffeineCacheRatelimiter implements Ratelimiter<InetAddress> 
     final long expectedNewTimestamp = System.nanoTime() + timeout;
     final long last = expiringCache.get(inetAddress, result -> expectedNewTimestamp);
     return expectedNewTimestamp == last;
+  }
+
+  public void setTimeout(final long timeout) {
+    this.timeout = timeout;
+  }
+
+  public void setExpiringCache(final Cache<InetAddress, Long> expiringCache) {
+    this.expiringCache = expiringCache;
+  }
+
+  public CaffeineCacheRatelimiter() {
   }
 }

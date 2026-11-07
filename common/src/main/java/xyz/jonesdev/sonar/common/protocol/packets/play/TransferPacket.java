@@ -18,19 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class TransferPacket implements SonarPacket {
   private String destinationHost;
   private int destinationPort;
@@ -44,5 +36,26 @@ public final class TransferPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public String getDestinationHost() {
+    return this.destinationHost;
+  }
+
+  public int getDestinationPort() {
+    return this.destinationPort;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "TransferPacket(destinationHost=" + this.getDestinationHost() + ", destinationPort=" + this.getDestinationPort() + ")";
+  }
+
+  public TransferPacket() {
+  }
+
+  public TransferPacket(final String destinationHost, final int destinationPort) {
+    this.destinationHost = destinationHost;
+    this.destinationPort = destinationPort;
   }
 }

@@ -17,14 +17,12 @@
 
 package xyz.jonesdev.sonar.api.notification;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.UUID;
 import java.util.Vector;
 
-@Getter
 public abstract class NotificationHandler {
   protected final @NotNull Collection<UUID> subscribers = new Vector<>(0);
 
@@ -50,5 +48,10 @@ public abstract class NotificationHandler {
    */
   public final void unsubscribe(final UUID uuid) {
     getSubscribers().remove(uuid);
+  }
+
+  @NotNull
+  public Collection<UUID> getSubscribers() {
+    return this.subscribers;
   }
 }

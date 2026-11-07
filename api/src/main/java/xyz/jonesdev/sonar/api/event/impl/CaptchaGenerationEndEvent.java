@@ -17,16 +17,28 @@
 
 package xyz.jonesdev.sonar.api.event.impl;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import xyz.jonesdev.sonar.api.event.SonarEvent;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
 
-@Getter
-@ToString
-@RequiredArgsConstructor
 public final class CaptchaGenerationEndEvent implements SonarEvent {
   private final SystemTimer timer;
   private final int amountGenerated;
+
+  public SystemTimer getTimer() {
+    return this.timer;
+  }
+
+  public int getAmountGenerated() {
+    return this.amountGenerated;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "CaptchaGenerationEndEvent(timer=" + this.getTimer() + ", amountGenerated=" + this.getAmountGenerated() + ")";
+  }
+
+  public CaptchaGenerationEndEvent(final SystemTimer timer, final int amountGenerated) {
+    this.timer = timer;
+    this.amountGenerated = amountGenerated;
+  }
 }

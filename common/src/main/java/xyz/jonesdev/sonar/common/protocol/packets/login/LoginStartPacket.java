@@ -19,10 +19,6 @@ package xyz.jonesdev.sonar.common.protocol.packets.login;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
@@ -32,10 +28,6 @@ import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
 import java.util.UUID;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class LoginStartPacket implements SonarPacket {
   private String username;
   private @Nullable UUID uuid;
@@ -74,5 +66,27 @@ public final class LoginStartPacket implements SonarPacket {
         }
       }
     }
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
+  @Nullable
+  public UUID getUuid() {
+    return this.uuid;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "LoginStartPacket(username=" + this.getUsername() + ", uuid=" + this.getUuid() + ")";
+  }
+
+  public LoginStartPacket() {
+  }
+
+  public LoginStartPacket(final String username, @Nullable final UUID uuid) {
+    this.username = username;
+    this.uuid = uuid;
   }
 }

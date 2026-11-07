@@ -21,8 +21,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
-import lombok.Getter;
-import lombok.experimental.UtilityClass;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
@@ -42,21 +40,20 @@ import static xyz.jonesdev.sonar.bukkit.SonarBukkit.INITIALIZE_LISTENER;
 // https://github.com/retrooper/packetevents/blob/2.0/spigot/src/main/java/io/github/retrooper/packetevents/util/SpigotReflectionUtil.java
 // https://github.com/dmulloy2/ProtocolLib/blob/master/TinyProtocol/src/main/java/com/comphenix/tinyprotocol/TinyProtocol.java
 // https://github.com/ViaVersion/ViaVersion/blob/master/bukkit/src/main/java/com/viaversion/viaversion/bukkit/handlers/BukkitChannelInitializer.java
-@UtilityClass
-public class BukkitInjector {
-  private final String LEGACY_NMS_PACKAGE;
-  private final String OBC_PACKAGE;
+public final class BukkitInjector {
+  private static final String LEGACY_NMS_PACKAGE;
+  private static final String OBC_PACKAGE;
 
-  private final BukkitServerVersion SERVER_VERSION;
-  private final boolean USES_LEGACY_PACKAGING, OBFUSCATED;
+  private static final BukkitServerVersion SERVER_VERSION;
+  private static final boolean USES_LEGACY_PACKAGING;
+  private static final boolean OBFUSCATED;
 
-  private final Class<?> MINECRAFT_SERVER_CLASS;
-  private final Class<?> CRAFTBUKKIT_SERVER_CLASS;
-  private final Class<?> SERVER_CONNECTION_CLASS;
-  private final Object SERVER_INSTANCE;
+  private static final Class<?> MINECRAFT_SERVER_CLASS;
+  private static final Class<?> CRAFTBUKKIT_SERVER_CLASS;
+  private static final Class<?> SERVER_CONNECTION_CLASS;
+  private static final Object SERVER_INSTANCE;
 
-  @Getter
-  private boolean lateBindEnabled;
+  private static boolean lateBindEnabled;
 
   static {
     SERVER_VERSION = resolveServerVersion();
@@ -99,7 +96,7 @@ public class BukkitInjector {
     }
   }
 
-  private void checkLateBind() {
+  private static void checkLateBind() {
     try {
       try {
         Class.forName("org.bukkit.event.server.ServerLoadEvent");
@@ -120,7 +117,7 @@ public class BukkitInjector {
     }
   }
 
-  public @NotNull Field getFieldAt(final @NotNull Class<?> clazz,
+  public static @NotNull Field getFieldAt(final @NotNull Class<?> clazz,
                                    final @NotNull Class<?> type,
                                    final int index) {
     int currentIndex = 0;
@@ -160,7 +157,7 @@ public class BukkitInjector {
     throw new NoSuchFieldException(types[0]);
   }
 
-  private @NotNull BukkitServerVersion resolveServerVersion() {
+  private static @NotNull BukkitServerVersion resolveServerVersion() {
     final String bukkitVersion = Bukkit.getBukkitVersion();
 
     for (final BukkitServerVersion serverVersion : BukkitServerVersion.REVERSED_VALUES) {
@@ -173,7 +170,7 @@ public class BukkitInjector {
     throw new IllegalStateException("Could not find server version " + bukkitVersion);
   }
 
-  private boolean isObfuscated() {
+  private static boolean isObfuscated() {
     try {
       Class.forName("net.minecraft.server.network.PlayerConnection");
       return true;
@@ -182,16 +179,16 @@ public class BukkitInjector {
     }
   }
 
-  private @NotNull Class<?> getNMSClass(final String modern, final String legacy) throws ClassNotFoundException {
+  private static @NotNull Class<?> getNMSClass(final String modern, final String legacy) throws ClassNotFoundException {
     return Class.forName(USES_LEGACY_PACKAGING ? LEGACY_NMS_PACKAGE + legacy : "net.minecraft." + modern);
   }
 
-  public @NotNull Class<?> getOBCClass(final String clazz) throws ClassNotFoundException {
+  public static @NotNull Class<?> getOBCClass(final String clazz) throws ClassNotFoundException {
     return Class.forName(OBC_PACKAGE + clazz);
   }
 
   @SuppressWarnings("unchecked")
-  public void inject() {
+  public static void inject() {
     try {
       for (int i = 0; i < 2; i++) {
         final Field field = getFieldAt(SERVER_CONNECTION_CLASS, List.class, i);
@@ -269,5 +266,13 @@ public class BukkitInjector {
     } catch (Exception exception) {
       Sonar.get0().getLogger().error("An error occurred while injecting {}", exception);
     }
+  }
+
+  private BukkitInjector() {
+    throw new java.lang.UnsupportedOperationException("This is a utility class and cannot be instantiated");
+  }
+
+  public static boolean isLateBindEnabled() {
+    return BukkitInjector.lateBindEnabled;
   }
 }

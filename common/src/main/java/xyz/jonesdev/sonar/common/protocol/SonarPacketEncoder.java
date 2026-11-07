@@ -20,16 +20,12 @@ package xyz.jonesdev.sonar.common.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@RequiredArgsConstructor
 public final class SonarPacketEncoder extends MessageToByteEncoder<SonarPacket> {
   private final ProtocolVersion protocolVersion;
-  @Getter
   private SonarPacketRegistry packetRegistry;
   private SonarPacketRegistry.ProtocolRegistry protocolRegistry;
 
@@ -47,5 +43,13 @@ public final class SonarPacketEncoder extends MessageToByteEncoder<SonarPacket> 
     final int packetId = protocolRegistry.getPacketId(originalPacket);
     ProtocolUtil.writeVarInt(out, packetId);
     packet.encode(out, protocolVersion);
+  }
+
+  public SonarPacketEncoder(final ProtocolVersion protocolVersion) {
+    this.protocolVersion = protocolVersion;
+  }
+
+  public SonarPacketRegistry getPacketRegistry() {
+    return this.packetRegistry;
   }
 }
