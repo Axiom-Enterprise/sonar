@@ -18,19 +18,11 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class ClientInformationPacket implements SonarPacket {
   private String locale;
   private byte viewDistance;
@@ -86,5 +78,66 @@ public final class ClientInformationPacket implements SonarPacket {
   @Override
   public int expectedMaxLength(final ProtocolVersion protocolVersion) {
     return 0xff + 1; // 256 as a hard-limit
+  }
+
+  public String getLocale() {
+    return this.locale;
+  }
+
+  public byte getViewDistance() {
+    return this.viewDistance;
+  }
+
+  public int getChatVisibility() {
+    return this.chatVisibility;
+  }
+
+  public boolean isChatColors() {
+    return this.chatColors;
+  }
+
+  public byte getDifficulty() {
+    return this.difficulty;
+  }
+
+  public short getSkinParts() {
+    return this.skinParts;
+  }
+
+  public int getMainHand() {
+    return this.mainHand;
+  }
+
+  public boolean isChatFilteringEnabled() {
+    return this.chatFilteringEnabled;
+  }
+
+  public boolean isClientListingAllowed() {
+    return this.clientListingAllowed;
+  }
+
+  public int getParticleStatus() {
+    return this.particleStatus;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "ClientInformationPacket(locale=" + this.getLocale() + ", viewDistance=" + this.getViewDistance() + ", chatVisibility=" + this.getChatVisibility() + ", chatColors=" + this.isChatColors() + ", difficulty=" + this.getDifficulty() + ", skinParts=" + this.getSkinParts() + ", mainHand=" + this.getMainHand() + ", chatFilteringEnabled=" + this.isChatFilteringEnabled() + ", clientListingAllowed=" + this.isClientListingAllowed() + ", particleStatus=" + this.getParticleStatus() + ")";
+  }
+
+  public ClientInformationPacket() {
+  }
+
+  public ClientInformationPacket(final String locale, final byte viewDistance, final int chatVisibility, final boolean chatColors, final byte difficulty, final short skinParts, final int mainHand, final boolean chatFilteringEnabled, final boolean clientListingAllowed, final int particleStatus) {
+    this.locale = locale;
+    this.viewDistance = viewDistance;
+    this.chatVisibility = chatVisibility;
+    this.chatColors = chatColors;
+    this.difficulty = difficulty;
+    this.skinParts = skinParts;
+    this.mainHand = mainHand;
+    this.chatFilteringEnabled = chatFilteringEnabled;
+    this.clientListingAllowed = clientListingAllowed;
+    this.particleStatus = particleStatus;
   }
 }

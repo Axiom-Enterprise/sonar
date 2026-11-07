@@ -18,8 +18,6 @@
 package xyz.jonesdev.sonar.common;
 
 import io.netty.channel.*;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
@@ -44,8 +42,6 @@ import java.util.concurrent.TimeUnit;
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.*;
 import static xyz.jonesdev.sonar.common.protocol.SonarPacketPreparer.*;
 
-@AllArgsConstructor
-@RequiredArgsConstructor
 public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter {
   protected @Nullable String username;
   protected ProtocolVersion protocolVersion;
@@ -292,5 +288,15 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
     void accept(final @NotNull ChannelPipeline pipeline,
                 final @NotNull String name,
                 final @NotNull ChannelHandler handler);
+  }
+
+  public InboundHandlerAdapter(@Nullable final String username, final ProtocolVersion protocolVersion, @Nullable final String handshakeHostname, @Nullable final RemovalListener channelRemovalListener) {
+    this.username = username;
+    this.protocolVersion = protocolVersion;
+    this.handshakeHostname = handshakeHostname;
+    this.channelRemovalListener = channelRemovalListener;
+  }
+
+  public InboundHandlerAdapter() {
   }
 }

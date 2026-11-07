@@ -19,7 +19,6 @@ package xyz.jonesdev.sonar.api.webhook;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
@@ -30,7 +29,6 @@ import java.util.function.Supplier;
 
 import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
 
-@RequiredArgsConstructor
 public final class DiscordWebhook {
   private final String url;
 
@@ -65,13 +63,13 @@ public final class DiscordWebhook {
   }
 
   @SuppressWarnings("unused")
-  @RequiredArgsConstructor
   static final class Webhook {
-    private final String content, username, avatar_url;
+    private final String content;
+    private final String username;
+    private final String avatar_url;
     private final boolean tts;
     private final List<EmbedMessage> embeds;
 
-    @RequiredArgsConstructor
     static final class EmbedMessage {
       private final String title;
       private final String description;
@@ -79,19 +77,49 @@ public final class DiscordWebhook {
       private final int color;
       private final Field[] fields;
       private final Footer footer;
+
+      public EmbedMessage(final String title, final String description, final String url, final int color, final Field[] fields, final Footer footer) {
+        this.title = title;
+        this.description = description;
+        this.url = url;
+        this.color = color;
+        this.fields = fields;
+        this.footer = footer;
+      }
     }
 
-    @RequiredArgsConstructor
     static final class Field {
       private final String name;
       private final String value;
       private final boolean inline;
+
+      public Field(final String name, final String value, final boolean inline) {
+        this.name = name;
+        this.value = value;
+        this.inline = inline;
+      }
     }
 
-    @RequiredArgsConstructor
     static final class Footer {
       private final String text;
       private final String icon_url;
+
+      public Footer(final String text, final String icon_url) {
+        this.text = text;
+        this.icon_url = icon_url;
     }
+  }
+
+    public Webhook(final String content, final String username, final String avatar_url, final boolean tts, final List<EmbedMessage> embeds) {
+      this.content = content;
+      this.username = username;
+      this.avatar_url = avatar_url;
+      this.tts = tts;
+      this.embeds = embeds;
+    }
+  }
+
+  public DiscordWebhook(final String url) {
+    this.url = url;
   }
 }

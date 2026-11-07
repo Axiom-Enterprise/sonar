@@ -18,10 +18,6 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.LongArrayBinaryTag;
 import org.jetbrains.annotations.NotNull;
@@ -30,12 +26,9 @@ import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class ChunkDataPacket implements SonarPacket {
-  private int sectionX, sectionZ;
+  private int sectionX;
+  private int sectionZ;
 
   @Override
   public void encode(final @NotNull ByteBuf byteBuf, final @NotNull ProtocolVersion protocolVersion) throws Exception {
@@ -159,5 +152,26 @@ public final class ChunkDataPacket implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) {
     throw new UnsupportedOperationException();
+  }
+
+  public int getSectionX() {
+    return this.sectionX;
+  }
+
+  public int getSectionZ() {
+    return this.sectionZ;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "ChunkDataPacket(sectionX=" + this.getSectionX() + ", sectionZ=" + this.getSectionZ() + ")";
+  }
+
+  public ChunkDataPacket() {
+  }
+
+  public ChunkDataPacket(final int sectionX, final int sectionZ) {
+    this.sectionX = sectionX;
+    this.sectionZ = sectionZ;
   }
 }

@@ -20,9 +20,6 @@ package xyz.jonesdev.sonar.common;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.common.netty.TailExceptionsHandler;
@@ -31,11 +28,8 @@ import xyz.jonesdev.sonar.common.statistics.GlobalSonarStatistics;
 import java.net.InetAddress;
 import java.util.function.Consumer;
 
-@RequiredArgsConstructor
 public final class InboundHandler extends ChannelInboundHandlerAdapter {
   private final Consumer<ChannelPipeline> sonarPipelineInjector;
-  @Setter
-  @Getter
   private InetAddress inetAddress;
 
   @Override
@@ -89,5 +83,17 @@ public final class InboundHandler extends ChannelInboundHandlerAdapter {
     if (TailExceptionsHandler.LOG_EXCEPTIONS) {
       cause.printStackTrace(System.err);
     }
+  }
+
+  public InboundHandler(final Consumer<ChannelPipeline> sonarPipelineInjector) {
+    this.sonarPipelineInjector = sonarPipelineInjector;
+  }
+
+  public void setInetAddress(final InetAddress inetAddress) {
+    this.inetAddress = inetAddress;
+  }
+
+  public InetAddress getInetAddress() {
+    return this.inetAddress;
   }
 }

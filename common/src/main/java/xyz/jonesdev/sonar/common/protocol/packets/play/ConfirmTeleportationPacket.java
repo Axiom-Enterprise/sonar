@@ -18,18 +18,10 @@
 package xyz.jonesdev.sonar.common.protocol.packets.play;
 
 import io.netty.buffer.ByteBuf;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public final class ConfirmTeleportationPacket implements SonarPacket {
   private int teleportId;
   private double x;
@@ -57,5 +49,46 @@ public final class ConfirmTeleportationPacket implements SonarPacket {
       yaw = byteBuf.readFloat();
       pitch = byteBuf.readFloat();
     }
+  }
+
+  public int getTeleportId() {
+    return this.teleportId;
+  }
+
+  public double getX() {
+    return this.x;
+  }
+
+  public double getY() {
+    return this.y;
+  }
+
+  public double getZ() {
+    return this.z;
+  }
+
+  public float getYaw() {
+    return this.yaw;
+  }
+
+  public float getPitch() {
+    return this.pitch;
+  }
+
+  @java.lang.Override
+  public java.lang.String toString() {
+    return "ConfirmTeleportationPacket(teleportId=" + this.getTeleportId() + ", x=" + this.getX() + ", y=" + this.getY() + ", z=" + this.getZ() + ", yaw=" + this.getYaw() + ", pitch=" + this.getPitch() + ")";
+  }
+
+  public ConfirmTeleportationPacket() {
+  }
+
+  public ConfirmTeleportationPacket(final int teleportId, final double x, final double y, final double z, final float yaw, final float pitch) {
+    this.teleportId = teleportId;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.yaw = yaw;
+    this.pitch = pitch;
   }
 }

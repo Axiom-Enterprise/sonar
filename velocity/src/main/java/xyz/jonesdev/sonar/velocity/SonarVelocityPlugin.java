@@ -23,13 +23,11 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import lombok.Getter;
 import org.bstats.velocity.Metrics;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
 
-@Getter
 public final class SonarVelocityPlugin {
   private final ProxyServer server;
   private final Logger logger;
@@ -57,5 +55,25 @@ public final class SonarVelocityPlugin {
   @Subscribe
   public void handle(final ProxyShutdownEvent event) {
     bootstrap.shutdown();
+  }
+
+  public ProxyServer getServer() {
+    return this.server;
+  }
+
+  public Logger getLogger() {
+    return this.logger;
+  }
+
+  public Path getDataDirectory() {
+    return this.dataDirectory;
+  }
+
+  public Metrics.Factory getMetricsFactory() {
+    return this.metricsFactory;
+  }
+
+  public SonarVelocity getBootstrap() {
+    return this.bootstrap;
   }
 }

@@ -18,8 +18,6 @@
 package xyz.jonesdev.sonar.captcha.legacy;
 
 import com.jhlabs.image.*;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
@@ -36,8 +34,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Random;
 
-@Getter
-@RequiredArgsConstructor
 public final class LegacyCaptchaGenerator implements CaptchaGenerator {
   private static final ScratchFilter SCRATCHES = new ScratchFilter(4);
   private static final NoiseOverlayFilter NOISE = new NoiseOverlayFilter(1, 7);
@@ -62,7 +58,8 @@ public final class LegacyCaptchaGenerator implements CaptchaGenerator {
     SMEAR.setDistance(5);
   }
 
-  private final int width = 128, height = 128;
+  private final int width = 128;
+  private final int height = 128;
   private final @Nullable File background;
   private @Nullable BufferedImage backgroundImage;
   private GradientPaint gradient;
@@ -208,5 +205,31 @@ public final class LegacyCaptchaGenerator implements CaptchaGenerator {
     // Draw the stroked shape
     final AffineTransform transform = AffineTransform.getTranslateInstance(tx, ty);
     graphics.fill(transform.createTransformedShape(strokedShape));
+  }
+
+  public int getWidth() {
+    return this.width;
+  }
+
+  public int getHeight() {
+    return this.height;
+  }
+
+  @Nullable
+  public File getBackground() {
+    return this.background;
+  }
+
+  @Nullable
+  public BufferedImage getBackgroundImage() {
+    return this.backgroundImage;
+  }
+
+  public GradientPaint getGradient() {
+    return this.gradient;
+  }
+
+  public LegacyCaptchaGenerator(@Nullable final File background) {
+    this.background = background;
   }
 }

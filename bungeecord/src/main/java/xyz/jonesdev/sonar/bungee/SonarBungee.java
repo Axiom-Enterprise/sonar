@@ -18,7 +18,6 @@
 package xyz.jonesdev.sonar.bungee;
 
 import com.alessiodp.libby.BungeeLibraryManager;
-import lombok.Getter;
 import net.kyori.adventure.audience.Audience;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -34,7 +33,6 @@ import xyz.jonesdev.sonar.common.boot.SonarBootstrap;
 
 import java.util.UUID;
 
-@Getter
 public final class SonarBungee extends SonarBootstrap<SonarBungeePlugin> {
   public SonarBungee(final @NotNull SonarBungeePlugin plugin, final @NotNull BungeeLibraryManager libraryManager) {
     super(plugin, SonarPlatform.BUNGEE, plugin.getDataFolder(), libraryManager);
@@ -112,5 +110,19 @@ public final class SonarBungee extends SonarBootstrap<SonarBungeePlugin> {
     if (metrics != null) {
       metrics.shutdown();
     }
+  }
+
+  /**
+   * Create a wrapper for the plugin logger, so we can use it outside
+   * the velocity module.
+   * <br>
+   * We have to do this, so we can access all necessary API functions.
+   */
+  public LoggerWrapper getLogger() {
+    return this.logger;
+  }
+
+  public Metrics getMetrics() {
+    return this.metrics;
   }
 }

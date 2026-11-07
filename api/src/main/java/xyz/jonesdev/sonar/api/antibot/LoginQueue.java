@@ -17,9 +17,6 @@
 
 package xyz.jonesdev.sonar.api.antibot;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import xyz.jonesdev.sonar.api.Sonar;
 
 import java.net.InetAddress;
@@ -28,8 +25,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Getter
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public final class LoginQueue {
   // Fixed thread pool executor for all new verifications
   private static final int THREAD_POOL_SIZE = Math.min(0x7fff, Runtime.getRuntime().availableProcessors() * 2);
@@ -49,5 +44,12 @@ public final class LoginQueue {
         iterator.remove();
       }
     });
+  }
+
+  public ConcurrentMap<InetAddress, Runnable> getPlayers() {
+    return this.players;
+  }
+
+  protected LoginQueue() {
   }
 }

@@ -22,13 +22,10 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.common.statistics.GlobalSonarStatistics;
 
 @ChannelHandler.Sharable
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BandwidthHandler extends ChannelDuplexHandler {
   public static final ChannelHandler INSTANCE = new BandwidthHandler();
 
@@ -50,5 +47,8 @@ public final class BandwidthHandler extends ChannelDuplexHandler {
       GlobalSonarStatistics.perSecondOutgoingTraffic.addAndGet(readableBytes);
     }
     ctx.write(msg, promise);
+  }
+
+  private BandwidthHandler() {
   }
 }

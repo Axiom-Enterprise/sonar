@@ -22,7 +22,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.EncoderException;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
@@ -35,7 +34,6 @@ import static xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion.ID_TO_PROT
 public final class SonarPacketSnapshot implements SonarPacket {
   private final IntObjectMap<Integer> mappings = new IntObjectHashMap<>(ID_TO_PROTOCOL_CONSTANT.size());
   private final IntObjectMap<byte[]> cachedBytes = new IntObjectHashMap<>(ID_TO_PROTOCOL_CONSTANT.size());
-  @Getter
   private final Class<? extends SonarPacket> originalPacketClass;
 
   public SonarPacketSnapshot(final @NotNull SonarPacket originalPacket) {
@@ -92,5 +90,9 @@ public final class SonarPacketSnapshot implements SonarPacket {
   @Override
   public void decode(final ByteBuf byteBuf, final ProtocolVersion protocolVersion) throws Exception {
     throw new UnsupportedOperationException();
+  }
+
+  public Class<? extends SonarPacket> getOriginalPacketClass() {
+    return this.originalPacketClass;
   }
 }
