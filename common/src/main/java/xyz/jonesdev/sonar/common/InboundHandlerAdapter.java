@@ -21,6 +21,7 @@ import io.netty.channel.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.RiskSignal;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.api.fingerprint.FingerprintingUtil;
 import xyz.jonesdev.sonar.common.netty.SonarTimeoutHandler;
@@ -36,7 +37,9 @@ import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.*;
@@ -199,6 +202,31 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
       return;
     }
 
+    // Most bots run on rented servers, so datacenter and VPN networks can be blocked during attacks
+    if (Sonar.get0().getAntiBot().isDatacenterBlocked(inetAddress)) {
+      customDisconnect(ctx.channel(), datacenterBlocked, protocolVersion);
+      return;
+    }
+
+    // Proxy pools often contain many addresses of the same subnet that join at the same time
+    final String subnetKey = Sonar.get0().getAntiBot().getSubnetKey(inetAddress);
+    if (Sonar.get0().getAntiBot().isSubnetLimitReached(subnetKey)) {
+      customDisconnect(ctx.channel(), subnetLimitReached, protocolVersion);
+      return;
+    }
+
+    // Collect suspicious behavior that is not enough to disconnect the player on its own
+    final Set<RiskSignal> riskSignals = EnumSet.noneOf(RiskSignal.class);
+    if (!Sonar.get0().getAntiBot().hasRequestedServerList(inetAddress)) {
+      riskSignals.add(RiskSignal.NO_SERVER_LIST_PING);
+    }
+    if (Sonar.get0().getAntiBot().isDatacenter(inetAddress)) {
+      riskSignals.add(RiskSignal.DATACENTER);
+    }
+    if (Sonar.get0().getAntiBot().getVerifyingInSubnet(subnetKey) > 0) {
+      riskSignals.add(RiskSignal.SUBNET_ACTIVITY);
+    }
+
     // Check if the IP address is currently being rate-limited
     if (!Sonar.get0().getAntiBot().getRatelimiter().attempt(inetAddress)) {
       customDisconnect(ctx.channel(), reconnectedTooFast, protocolVersion);
@@ -219,7 +247,7 @@ public abstract class InboundHandlerAdapter extends ChannelInboundHandlerAdapter
 
       // Create an instance for the user and let the verification handler take over the channel
       return () -> new UserWrapper(ctx, inetAddress, protocolVersion, username, fingerprint, geyser,
-        handshakeHostname);
+        handshakeHostname, riskSignals);
     });
   }
 

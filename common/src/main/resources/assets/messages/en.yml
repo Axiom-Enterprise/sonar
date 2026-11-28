@@ -145,6 +145,19 @@ commands:
     # Message shown when someone lists the allowlist
     list: '<prefix>Allowlist (<amount>): <gray><entries>'
 
+  # Translations for '/sonar history'
+  history:
+    # Description for this subcommand
+    description: "Show a summary of the last attacks"
+    # Message shown when no attack has been recorded yet
+    empty: '<prefix>No attacks have been recorded yet.'
+    # First line of the history
+    header: '<prefix>Last <amount> attack(s):'
+    # Line shown for every attack
+    entry: ' <gray>▪ <white><date></white> (<duration>): peak <white><peak-bps></white> joins/s, <white><peak-cps></white> connections/s, <green><verified></green> verified, <red><failed></red> failed, <yellow><blacklisted></yellow> blacklisted'
+    # Line shown below an attack with the subnets that failed the verification most often
+    subnets: '   <dark_gray>Top subnets: <subnets>'
+
   # Translations for '/sonar verified'
   verified:
     # Description for this subcommand
@@ -294,6 +307,18 @@ verification:
     - <header>
     - <red>The server is currently not accepting new players.
     - <gray>Please try again later.
+    - <footer>
+  # Disconnect message that is shown when a player joins from a blocked datacenter or VPN network
+  datacenter-blocked:
+    - <header>
+    - <red>Connections from hosting providers and VPNs are currently not allowed.
+    - <gray>Please disable your VPN or try again later.
+    - <footer>
+  # Disconnect message that is shown when too many players from the same network are being verified
+  subnet-limit:
+    - <header>
+    - <red>Too many players from your network are joining right now.
+    - <gray>Please try again in a few seconds.
     - <footer>
   # Disconnect message that is shown when someone joins with an invalid username
   invalid-username:

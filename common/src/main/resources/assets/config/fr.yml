@@ -44,6 +44,12 @@ lockdown:
   # Duration (in minutes) of '/sonar lockdown on' if no duration is given
   default-duration: 30
 
+# Sonar keeps a summary of the last attacks, which can be viewed using '/sonar history'
+# The history is stored in the database if one is configured
+attack-history:
+  # Maximum number of attacks to keep (0 = disabled)
+  max-entries: 50
+
 # Exposes Sonar's statistics in the Prometheus text format (e.g. for Grafana)
 # The endpoint is available at http://<host>:<port>/metrics
 metrics:
@@ -103,6 +109,9 @@ database:
   # Should Sonar store the blacklist in the database, so it survives restarts?
   # This only works if a database type other than NONE is configured
   persist-blacklist: true
+  # Seconds between two reads of the verified players and blacklist entries of other proxies
+  # Only enable this if multiple proxies share the same database (0 = disabled)
+  sync-interval: 0
 
 # Chaque nouvelle demande de connexion sera mise en file d'attente pour éviter les attaques d'inscription par spam
 # La file d'attente est mise à jour toutes les 1 seconde (20 ticks)
@@ -214,8 +223,76 @@ verification:
       # Longueur maximale de la marque client lors de la vérification
       max-length: 64
 
+    # Checks the client settings for values that the vanilla client can never send
+    # (invalid language, chat visibility, main hand or particle settings)
+    client-information:
+      # Should Sonar check the client settings? (Recommended)
+      enabled: true
+      # Regex for validating the language of the client (e.g. en_us, de_de, lol_us)
+      valid-locale-regex: ^[a-zA-Z]{2,4}(_[a-zA-Z0-9]{2,4})?$
+
+    # Blocks networks of datacenters, hosting providers and VPNs, where most bots are running
+    # Each list contains one IP address or CIDR range per line; text after '#', ';' or a space is ignored
+    datacenter:
+      # When should Sonar block players from these networks?
+      # Possible types: ALWAYS, DURING_ATTACK, NEVER
+      # - ALWAYS: Players from these networks can never join without being verified before
+      # - DURING_ATTACK: Players from these networks are only blocked during an attack (Recommended)
+      # - NEVER: Players are never blocked, but still count for the risk score
+      timing: DURING_ATTACK
+      # Files inside Sonar's plugin folder
+      # Example: ['datacenter.txt']
+      files: []
+      # Lists that Sonar downloads in the background
+      # Example: ['https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt']
+      urls: []
+      # How often Sonar downloads the lists again (in hours)
+      refresh-interval: 24
+
+    # Limits how many players from the same subnet can be verified at the same time
+    # Proxy pools often contain many addresses of the same network
+    subnet-limit:
+      # When should Sonar limit the number of players per subnet?
+      # Possible types: ALWAYS, DURING_ATTACK, NEVER
+      timing: DURING_ATTACK
+      # Maximum number of players per subnet that are being verified at the same time (0 = disabled)
+      max-verifying: 5
+      # Size of an IPv4 subnet (24 = 256 addresses)
+      ipv4-prefix: 24
+      # Size of an IPv6 subnet (48 = a typical customer network)
+      ipv6-prefix: 48
+
+    # Measures the ping of the player during the verification
+    # (These values represent the time in milliseconds: 1 second = 1000 milliseconds)
+    latency:
+      # Players with a higher ping fail the verification (0 = disabled)
+      max-ping: 0
+      # Players with a higher ping count as suspicious for the risk score (0 = disabled)
+      suspicious-ping: 800
+
     # Regex pour valider les noms d'utilisateur lors de la vérification
     valid-name-regex: ^[a-zA-Z0-9_]+$
+
+  # Sends suspicious players to the map captcha, even if the captcha timing is NEVER
+  # Every suspicious behavior adds its weight to the score of the player;
+  # players whose score reaches the threshold have to solve the captcha
+  risk-score:
+    # Should Sonar use the risk score?
+    enabled: true
+    # Score from which players have to solve the captcha
+    threshold: 3
+    # Weight of every suspicious behavior (0 = ignored)
+    weights:
+      # The player did not request the server list before joining
+      no-server-list-ping: 1
+      # The player joined from a datacenter or VPN network (see datacenter)
+      datacenter: 3
+      # Another player from the same subnet is being verified at the same time
+      subnet-activity: 1
+      # The ping of the player is higher than latency.suspicious-ping
+      high-ping: 1
+      # The player uses a view distance lower than 5 chunks
+      low-view-distance: 3
 
   # S'il est activé, le joueur sera renvoyé au serveur d'origine
   # après avoir passé avec succès la vérification du bot.

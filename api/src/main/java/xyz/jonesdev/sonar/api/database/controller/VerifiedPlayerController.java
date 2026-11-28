@@ -42,8 +42,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public final class VerifiedPlayerController {
   private final Set<String> cache = Collections.synchronizedSet(new HashSet<>());
@@ -51,8 +52,12 @@ public final class VerifiedPlayerController {
   private Dao<VerifiedPlayer, Integer> dao;
   private QueryBuilder<VerifiedPlayer, Integer> queryBuilder;
   private final @NotNull SonarConfiguration.Database.Type cachedDatabaseType;
-  private final ExecutorService updateService = Executors.newSingleThreadExecutor();
+  private final ScheduledExecutorService updateService = Executors.newSingleThreadScheduledExecutor();
   private int maximumAge;
+  // Entries written up to this long before the last synchronization are read again,
+  // since players are saved with the time they joined, which can be minutes before the actual write
+  private static final long SYNC_OVERLAP = TimeUnit.MINUTES.toMillis(10L);
+  private long lastSync;
 
   public VerifiedPlayerController(final @NotNull LibraryManager libraryManager) {
     final SonarConfiguration.Database database = Sonar.get0().getConfig().getDatabase();
@@ -115,6 +120,7 @@ public final class VerifiedPlayerController {
       updateService.execute(() -> {
         if (connectionSource != null) {
           try {
+            lastSync = System.currentTimeMillis();
             // Make sure to clear all outdated entries first
             clearOld(maximumAge, false);
             // Add all entries from the database to the cache
@@ -124,6 +130,13 @@ public final class VerifiedPlayerController {
           }
         }
       });
+
+      // Read the players verified by other proxies that share the same database
+      // H2 is a local file that cannot be shared, so there is nothing to synchronize
+      final int syncInterval = database.getSyncInterval();
+      if (syncInterval > 0 && cachedDatabaseType != SonarConfiguration.Database.Type.H2) {
+        updateService.scheduleWithFixedDelay(this::sync, syncInterval, syncInterval, TimeUnit.SECONDS);
+      }
     } catch (SQLException exception) {
       exception.printStackTrace(System.err);
     }
@@ -144,6 +157,28 @@ public final class VerifiedPlayerController {
       }
       // Make sure not to reuse a closed connection
       connectionSource = null;
+    }
+  }
+
+  /**
+   * Adds all players that have been verified since the last synchronization to the local cache.
+   * Players removed by other proxies stay in the cache until the next restart or reload.
+   */
+  private void sync() {
+    if (connectionSource == null) {
+      return;
+    }
+    try {
+      final long now = System.currentTimeMillis();
+      final List<VerifiedPlayer> players = dao.queryBuilder().where()
+        .ge("timestamp", new Timestamp(lastSync - SYNC_OVERLAP))
+        .query();
+      lastSync = now;
+      for (final VerifiedPlayer player : players) {
+        cache.add(player.getFingerprint());
+      }
+    } catch (SQLException exception) {
+      Sonar.get0().getLogger().error("Could not synchronize verified players: {}", exception);
     }
   }
 

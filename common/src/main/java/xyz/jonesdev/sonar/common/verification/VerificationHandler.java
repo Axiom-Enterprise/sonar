@@ -19,12 +19,15 @@ package xyz.jonesdev.sonar.common.verification;
 
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.RiskSignal;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
+import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 import xyz.jonesdev.sonar.api.database.model.VerifiedPlayer;
 import xyz.jonesdev.sonar.api.event.impl.UserBlacklistedEvent;
 import xyz.jonesdev.sonar.api.event.impl.UserVerifyFailedEvent;
 import xyz.jonesdev.sonar.api.event.impl.UserVerifySuccessEvent;
+import xyz.jonesdev.sonar.api.tracker.AttackTracker;
 import xyz.jonesdev.sonar.common.netty.MinecraftVarInt21FrameDecoder;
 import xyz.jonesdev.sonar.common.netty.MinecraftVarIntLengthEncoder;
 import xyz.jonesdev.sonar.common.protocol.SonarPacketDecoder;
@@ -36,6 +39,7 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 import xyz.jonesdev.sonar.common.util.exception.QuietDecoderException;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public abstract class VerificationHandler implements SonarPacketListener {
   protected final SonarUser user;
@@ -108,6 +112,12 @@ public abstract class VerificationHandler implements SonarPacketListener {
     // Call the VerifyFailedEvent for external API usage
     Sonar.get0().getEventManager().publish(new UserVerifyFailedEvent(user, reason));
 
+    // Remember which subnets fail the verification during an attack for the attack history
+    final AttackTracker.AttackStatistics attack = Sonar.get0().getAttackTracker().getCurrentAttack();
+    if (attack != null) {
+      attack.countFailedSubnet(Sonar.get0().getAntiBot().getSubnetKey(user.getInetAddress()));
+    }
+
     // Use a label, so we can easily add more code beneath this method in the future
     blacklist: {
       // Group the address by its subnet, so attackers cannot rotate addresses inside the same network
@@ -141,6 +151,24 @@ public abstract class VerificationHandler implements SonarPacketListener {
 
     // Throw an exception to avoid further code execution
     throw QuietDecoderException.INSTANCE;
+  }
+
+  /**
+   * Measures the round-trip time of a packet that the client has to answer immediately.
+   * Fails the verification if the ping is above the maximum ping
+   * and adds a risk signal if it is above the suspicious ping.
+   *
+   * @param sentAt Value of {@link System#nanoTime()} when the packet was sent
+   */
+  protected final void checkLatency(final long sentAt) {
+    final long ping = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - sentAt);
+    final SonarConfiguration.Verification.Latency config = Sonar.get0().getConfig().getVerification().getLatency();
+    if (config.getMaxPing() > 0) {
+      checkState(ping <= config.getMaxPing(), "ping too high: " + ping + "ms");
+    }
+    if (config.getSuspiciousPing() > 0 && ping > config.getSuspiciousPing()) {
+      user.flagRisk(RiskSignal.HIGH_PING);
+    }
   }
 
   protected final void checkState(final boolean state, final String failReason) {

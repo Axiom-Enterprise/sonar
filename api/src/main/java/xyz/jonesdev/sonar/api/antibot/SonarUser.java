@@ -26,6 +26,7 @@ import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
 
 import java.net.InetAddress;
+import java.util.Set;
 
 public interface SonarUser {
   @NotNull Channel channel();
@@ -43,6 +44,15 @@ public interface SonarUser {
   boolean isForceCaptcha();
 
   void setForceCaptcha(final boolean isForceCaptcha);
+
+  /**
+   * Adds a signal to the risk score of the player; every signal only counts once
+   *
+   * @param signal The suspicious behavior of the player
+   */
+  void flagRisk(final @NotNull RiskSignal signal);
+
+  @NotNull Set<RiskSignal> getRiskSignals();
 
   boolean isGeyser();
 

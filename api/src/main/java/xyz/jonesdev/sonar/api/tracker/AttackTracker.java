@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
+import xyz.jonesdev.sonar.api.database.model.AttackRecord;
 import xyz.jonesdev.sonar.api.event.impl.AttackDetectedEvent;
 import xyz.jonesdev.sonar.api.event.impl.AttackMitigatedEvent;
 import xyz.jonesdev.sonar.api.timer.SystemTimer;
@@ -29,6 +30,10 @@ import xyz.jonesdev.sonar.api.webhook.GenericWebhook;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static xyz.jonesdev.sonar.api.profiler.SimpleProcessProfiler.*;
 
@@ -45,6 +50,9 @@ public final class AttackTracker {
   private static final double BASELINE_SMOOTHING = 0.005;
 
   public static final class AttackStatistics {
+    // Attacks can use millions of addresses, so only a limited number of subnets is counted
+    private static final int MAX_TRACKED_SUBNETS = 10_000;
+
     private final SystemTimer duration = new SystemTimer();
     private final SystemTimer timer = new SystemTimer();
     private long peakJoinsPerSecond;
@@ -56,6 +64,36 @@ public final class AttackTracker {
     private int failedVerifications;
     // Whether the webhooks have already been notified about the start of this attack
     private boolean startNotified;
+    // Number of failed verifications per subnet during this attack
+    private final ConcurrentMap<String, AtomicInteger> failedSubnets = new ConcurrentHashMap<>();
+
+    /**
+     * Counts a failed verification for the given subnet
+     *
+     * @param subnetKey The subnet of the player that failed the verification
+     */
+    public void countFailedSubnet(final @NotNull String subnetKey) {
+      AtomicInteger count = failedSubnets.get(subnetKey);
+      if (count == null) {
+        if (failedSubnets.size() >= MAX_TRACKED_SUBNETS) {
+          return;
+        }
+        count = failedSubnets.computeIfAbsent(subnetKey, __ -> new AtomicInteger());
+      }
+      count.incrementAndGet();
+    }
+
+    /**
+     * @param limit Maximum number of subnets
+     * @return The subnets with the most failed verifications, e.g. {@code 1.2.3.0/24 (120), 5.6.7.0/24 (80)}
+     */
+    public @NotNull String formatTopFailedSubnets(final int limit) {
+      return failedSubnets.entrySet().stream()
+        .sorted((a, b) -> Integer.compare(b.getValue().get(), a.getValue().get()))
+        .limit(limit)
+        .map(entry -> entry.getKey() + " (" + entry.getValue().get() + ")")
+        .collect(Collectors.joining(", "));
+    }
 
     public SystemTimer getDuration() {
       return this.duration;
@@ -164,7 +202,9 @@ public final class AttackTracker {
         Sonar.get0().getEventManager().publish(new AttackMitigatedEvent(currentAttack));
 
         if (++attackThreshold > Sonar.get0().getConfig().getMinAttackThreshold()) {
-          postAttackEndWebhooks(currentAttack);
+          final AttackRecord record = createRecord(currentAttack);
+          Sonar.get0().getAttackHistoryController().save(record);
+          postAttackEndWebhooks(currentAttack, record);
         }
 
         // Reset the attack status
@@ -231,30 +271,45 @@ public final class AttackTracker {
   }
 
   /**
-   * Notifies Discord and the generic webhook that an attack has been mitigated.
+   * Summarizes an attack that just ended for the attack history and the webhooks
    *
    * @param attack Statistics of the attack that just ended
    */
-  private static void postAttackEndWebhooks(final @NotNull AttackStatistics attack) {
-    final DiscordWebhook discordWebhook = Sonar.get0().getConfig().getWebhook().getDiscordWebhook();
-    final GenericWebhook genericWebhook = Sonar.get0().getConfig().getWebhook().getGenericWebhook();
-    if (discordWebhook == null && genericWebhook == null) {
-      return;
-    }
-
-    // Save attack statistics
-    final long deltaInMillis = attack.duration.delay();
-    final long minutes = deltaInMillis / (60 * 1000); // Convert milliseconds to minutes
-    final double seconds = (deltaInMillis % (60 * 1000)) / 1000D; // Convert remaining milliseconds to seconds
-    final String formattedDuration = String.format("%d minutes, %.0f seconds", minutes, seconds);
-    final long startTimestamp = attack.duration.getStart() / 1000L;
-    final long endTimestamp = System.currentTimeMillis() / 1000L;
+  private static @NotNull AttackRecord createRecord(final @NotNull AttackStatistics attack) {
     final long blacklisted = Sonar.get0().getAntiBot().getBlacklist().estimatedSize();
     // Calculate during-attack-statistics using their deltas
     final long totalVerified = Sonar.get0().getVerifiedPlayerController().getCache().size();
     final long verified = Math.max(totalVerified - attack.successfulVerifications, 0);
     final long totalFailed = Sonar.get0().getStatistics().getTotalFailedVerifications();
     final long failed = Math.max(totalFailed - attack.failedVerifications, 0);
+    return new AttackRecord(attack.duration.getStart(), attack.duration.delay(),
+      attack.peakJoinsPerSecond, attack.peakConnectionsPerSecond, verified, failed, blacklisted,
+      attack.formatTopFailedSubnets(5));
+  }
+
+  /**
+   * Notifies Discord and the generic webhook that an attack has been mitigated.
+   *
+   * @param attack Statistics of the attack that just ended
+   * @param record Summary of the attack that just ended
+   */
+  private static void postAttackEndWebhooks(final @NotNull AttackStatistics attack,
+                                            final @NotNull AttackRecord record) {
+    final DiscordWebhook discordWebhook = Sonar.get0().getConfig().getWebhook().getDiscordWebhook();
+    final GenericWebhook genericWebhook = Sonar.get0().getConfig().getWebhook().getGenericWebhook();
+    if (discordWebhook == null && genericWebhook == null) {
+      return;
+    }
+
+    final long deltaInMillis = record.getDurationMillis();
+    final long minutes = deltaInMillis / (60 * 1000); // Convert milliseconds to minutes
+    final double seconds = (deltaInMillis % (60 * 1000)) / 1000D; // Convert remaining milliseconds to seconds
+    final String formattedDuration = String.format("%d minutes, %.0f seconds", minutes, seconds);
+    final long startTimestamp = record.getStart().getTime() / 1000L;
+    final long endTimestamp = System.currentTimeMillis() / 1000L;
+    final long blacklisted = record.getBlacklisted();
+    final long verified = record.getVerified();
+    final long failed = record.getFailed();
 
     if (discordWebhook != null) {
       final String peakCPU = Sonar.DECIMAL_FORMAT.format(attack.peakProcessCPUUsage);

@@ -24,6 +24,7 @@ import xyz.jonesdev.sonar.api.Sonar;
 import xyz.jonesdev.sonar.api.antibot.captcha.CaptchaGenerator;
 import xyz.jonesdev.sonar.api.antibot.ratelimit.Ratelimiter;
 import xyz.jonesdev.sonar.api.antibot.subnet.SubnetRange;
+import xyz.jonesdev.sonar.api.antibot.subnet.SubnetRangeSet;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 
 import java.net.InetAddress;
@@ -50,6 +51,10 @@ public final class AntiBot {
   private Cache<String, AtomicInteger> namePatterns;
   // Timestamp (in milliseconds) at which the lockdown ends; 0 if there is no lockdown
   private volatile long lockdownEnd;
+  // Datacenter and VPN networks loaded from the configured files and URLs
+  private volatile SubnetRangeSet datacenterRanges = SubnetRangeSet.EMPTY;
+  // Number of players that are currently being verified per subnet
+  private final ConcurrentMap<String, Integer> verifyingSubnets = new ConcurrentHashMap<>(256);
 
   /**
    * Builds the blacklist key of an address by grouping it into its configured subnet.
@@ -99,6 +104,14 @@ public final class AntiBot {
     return serverListPings != null
       && shouldPerform(Sonar.get0().getConfig().getVerification().getServerListPing().getTiming())
       && serverListPings.getIfPresent(inetAddress) == null;
+  }
+
+  /**
+   * @param inetAddress The address of the player
+   * @return {@code true} if the address recently requested the server list
+   */
+  public boolean hasRequestedServerList(final @NotNull InetAddress inetAddress) {
+    return serverListPings == null || serverListPings.getIfPresent(inetAddress) != null;
   }
 
   /**
@@ -202,6 +215,87 @@ public final class AntiBot {
       }
     }
     return pattern.toString();
+  }
+
+  /**
+   * @param inetAddress The address of the player
+   * @return {@code true} if the address belongs to one of the loaded datacenter or VPN networks
+   */
+  public boolean isDatacenter(final @NotNull InetAddress inetAddress) {
+    return datacenterRanges.contains(inetAddress);
+  }
+
+  /**
+   * @param inetAddress The address of the player
+   * @return {@code true} if the datacenter check is active and the address belongs to a datacenter or VPN network
+   */
+  public boolean isDatacenterBlocked(final @NotNull InetAddress inetAddress) {
+    return shouldPerform(Sonar.get0().getConfig().getVerification().getDatacenter().getTiming())
+      && isDatacenter(inetAddress);
+  }
+
+  /**
+   * Groups the address into the subnet used by the subnet limit and the attack history.
+   *
+   * @param inetAddress The address of the player
+   * @return e.g. {@code 1.2.3.0/24} or {@code 2001:db8:0:0:0:0:0:0/48}
+   */
+  public @NotNull String getSubnetKey(final @NotNull InetAddress inetAddress) {
+    final SonarConfiguration.Verification.SubnetLimit config = Sonar.get0().getConfig().getVerification().getSubnetLimit();
+    return SubnetRange.toSubnetKey(inetAddress,
+      inetAddress.getAddress().length == 4 ? config.getIpv4Prefix() : config.getIpv6Prefix());
+  }
+
+  /**
+   * @param subnetKey The key of the subnet (see {@link #getSubnetKey(InetAddress)})
+   * @return The number of players from this subnet that are currently being verified
+   */
+  public int getVerifyingInSubnet(final @NotNull String subnetKey) {
+    return verifyingSubnets.getOrDefault(subnetKey, 0);
+  }
+
+  /**
+   * @param subnetKey The key of the subnet (see {@link #getSubnetKey(InetAddress)})
+   * @return {@code true} if the subnet limit is active and too many players from this subnet are being verified
+   */
+  public boolean isSubnetLimitReached(final @NotNull String subnetKey) {
+    final SonarConfiguration.Verification.SubnetLimit config = Sonar.get0().getConfig().getVerification().getSubnetLimit();
+    return config.getMaxVerifying() > 0
+      && shouldPerform(config.getTiming())
+      && getVerifyingInSubnet(subnetKey) >= config.getMaxVerifying();
+  }
+
+  public void addVerifyingSubnet(final @NotNull String subnetKey) {
+    verifyingSubnets.merge(subnetKey, 1, Integer::sum);
+  }
+
+  public void removeVerifyingSubnet(final @NotNull String subnetKey) {
+    verifyingSubnets.computeIfPresent(subnetKey, (__, count) -> count <= 1 ? null : count - 1);
+  }
+
+  /**
+   * @param user The player that is being verified
+   * @return The sum of the weights of all risk signals of the player
+   */
+  public int getRiskScore(final @NotNull SonarUser user) {
+    final SonarConfiguration.Verification.RiskScore config = Sonar.get0().getConfig().getVerification().getRiskScore();
+    int score = 0;
+    for (final RiskSignal signal : user.getRiskSignals()) {
+      score += config.getWeight(signal);
+    }
+    return score;
+  }
+
+  /**
+   * @param user The player that is being verified
+   * @return {@code true} if the player has to solve the map captcha
+   */
+  public boolean shouldPerformCaptcha(final @NotNull SonarUser user) {
+    if (user.isForceCaptcha() || shouldPerformCaptcha()) {
+      return true;
+    }
+    final SonarConfiguration.Verification.RiskScore config = Sonar.get0().getConfig().getVerification().getRiskScore();
+    return config.isEnabled() && getRiskScore(user) >= config.getThreshold();
   }
 
   /**
@@ -321,6 +415,14 @@ public final class AntiBot {
 
   public void setServerListRequests(final Cache<InetAddress, AtomicInteger> serverListRequests) {
     this.serverListRequests = serverListRequests;
+  }
+
+  public SubnetRangeSet getDatacenterRanges() {
+    return this.datacenterRanges;
+  }
+
+  public void setDatacenterRanges(final @NotNull SubnetRangeSet datacenterRanges) {
+    this.datacenterRanges = datacenterRanges;
   }
 
   public void setNamePatterns(final Cache<String, AtomicInteger> namePatterns) {

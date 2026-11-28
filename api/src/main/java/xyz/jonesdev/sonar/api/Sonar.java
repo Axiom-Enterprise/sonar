@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.antibot.AntiBot;
 import xyz.jonesdev.sonar.api.command.subcommand.SubcommandRegistry;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
+import xyz.jonesdev.sonar.api.database.controller.AttackHistoryController;
 import xyz.jonesdev.sonar.api.database.controller.BlacklistController;
 import xyz.jonesdev.sonar.api.database.controller.VerifiedPlayerController;
 import xyz.jonesdev.sonar.api.event.SonarEventManager;
@@ -92,6 +93,13 @@ public interface Sonar {
    * @return The {@link BlacklistController} instance.
    */
   BlacklistController getBlacklistController();
+
+  /**
+   * Gets the controller that stores the summaries of mitigated attacks.
+   *
+   * @return The {@link AttackHistoryController} instance.
+   */
+  AttackHistoryController getAttackHistoryController();
 
   /**
    * Gets the handler for action bar notifications.

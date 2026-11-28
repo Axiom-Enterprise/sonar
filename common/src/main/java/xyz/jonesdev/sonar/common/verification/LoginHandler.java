@@ -19,8 +19,10 @@ package xyz.jonesdev.sonar.common.verification;
 
 import org.jetbrains.annotations.NotNull;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.RiskSignal;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
+import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 import xyz.jonesdev.sonar.common.protocol.SonarPacket;
 import xyz.jonesdev.sonar.common.protocol.SonarPacketDecoder;
 import xyz.jonesdev.sonar.common.protocol.SonarPacketEncoder;
@@ -54,13 +56,15 @@ public final class LoginHandler extends VerificationHandler {
          * is active and legitimate, thereby preventing bot connections that
          * could flood the server with login attempts and other unwanted traffic.
          */
-        user.write(PRE_JOIN_KEEP_ALIVE);
+        writeKeepAlive();
       }
     }
   }
 
   private boolean receivedClientInfo, receivedClientBrand, acknowledgedLogin;
   private int expectedKeepAliveId = PRE_JOIN_KEEP_ALIVE_ID;
+  // Value of System.nanoTime() when the KeepAlive packet was sent, used for the latency check
+  private long keepAliveSentAt;
 
   @Override
   public void handle(final @NotNull SonarPacket packet) {
@@ -75,6 +79,8 @@ public final class LoginHandler extends VerificationHandler {
 
       // Immediately verify the player if they do not need any configuration (pre-1.20.2)
       if (expectedKeepAliveId != 0) {
+        checkLatency(keepAliveSentAt);
+
         if (user.getProtocolVersion().lessThan(ProtocolVersion.MINECRAFT_1_20_2)) {
           markSuccess();
         } else {
@@ -91,7 +97,7 @@ public final class LoginHandler extends VerificationHandler {
       // Update state, so we're able to send/receive packets during the CONFIG state
       updateEncoderDecoderState(SonarPacketRegistry.CONFIG);
       // Perform the KeepAlive check now (config, not pre-config)
-      user.write(PRE_JOIN_KEEP_ALIVE);
+      writeKeepAlive();
     } else if (packet instanceof FinishConfigurationPacket) {
       // Update the encoder and decoder state because we're currently in the CONFIG state
       updateEncoderDecoderState(SonarPacketRegistry.GAME);
@@ -106,7 +112,15 @@ public final class LoginHandler extends VerificationHandler {
         final int viewDistance = clientInformation.getViewDistance();
         checkState(viewDistance >= 2, "view distance: " + viewDistance);
         if (viewDistance < 5) {
-          user.setForceCaptcha(true);
+          // Without the risk score, a low view distance always leads to the captcha (like before)
+          if (Sonar.get0().getConfig().getVerification().getRiskScore().isEnabled()) {
+            user.flagRisk(RiskSignal.LOW_VIEW_DISTANCE);
+          } else {
+            user.setForceCaptcha(true);
+          }
+        }
+        if (Sonar.get0().getConfig().getVerification().getClientInformation().isEnabled()) {
+          validateClientSettings(clientInformation);
         }
       }
 
@@ -168,6 +182,34 @@ public final class LoginHandler extends VerificationHandler {
   void validateClientInformation() {
     checkState(receivedClientInfo, "didn't send client settings");
     checkState(receivedClientBrand, "didn't send client brand");
+  }
+
+  private void writeKeepAlive() {
+    keepAliveSentAt = System.nanoTime();
+    user.write(PRE_JOIN_KEEP_ALIVE);
+  }
+
+  /**
+   * Checks the client settings for values that the vanilla client can never send
+   */
+  private void validateClientSettings(final @NotNull ClientInformationPacket clientInformation) {
+    final SonarConfiguration.Verification.ClientInformation config =
+      Sonar.get0().getConfig().getVerification().getClientInformation();
+    final String locale = clientInformation.getLocale();
+    checkState(locale != null && config.getValidLocaleRegex().matcher(locale).matches(), "invalid locale: " + locale);
+    // 0 = full, 1 = system messages only, 2 = hidden
+    final int chatVisibility = clientInformation.getChatVisibility();
+    checkState(chatVisibility >= 0 && chatVisibility <= 2, "invalid chat visibility: " + chatVisibility);
+    if (user.getProtocolVersion().greaterThanOrEquals(ProtocolVersion.MINECRAFT_1_9)) {
+      // 0 = left, 1 = right
+      final int mainHand = clientInformation.getMainHand();
+      checkState(mainHand == 0 || mainHand == 1, "invalid main hand: " + mainHand);
+    }
+    if (user.getProtocolVersion().greaterThanOrEquals(ProtocolVersion.MINECRAFT_1_21_2)) {
+      // 0 = all, 1 = decreased, 2 = minimal
+      final int particleStatus = clientInformation.getParticleStatus();
+      checkState(particleStatus >= 0 && particleStatus <= 2, "invalid particle status: " + particleStatus);
+    }
   }
 
   private void updateEncoderDecoderState(final @NotNull SonarPacketRegistry registry) {

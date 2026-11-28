@@ -141,6 +141,8 @@ public final class SonarPacketPreparer {
   public static SonarPacket invalidHostname;
   public static SonarPacket namePatternBlocked;
   public static SonarPacket lockdown;
+  public static SonarPacket datacenterBlocked;
+  public static SonarPacket subnetLimitReached;
   public static SonarPacket[] xpCountdown;
   public static SonarPacket updateTime;
 
@@ -226,6 +228,8 @@ public final class SonarPacketPreparer {
     invalidHostname = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getInvalidHostname(), true));
     namePatternBlocked = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getNamePatternBlocked(), true));
     lockdown = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getLockdown(), true));
+    datacenterBlocked = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getDatacenterBlocked(), true));
+    subnetLimitReached = new SonarPacketSnapshot(new DisconnectPacket(Sonar.get0().getConfig().getVerification().getSubnetLimitReached(), true));
 
     // Prepare update time packet
     final int timeOfDay = Sonar.get0().getConfig().getVerification().getTimeOfDay();
@@ -245,8 +249,10 @@ public final class SonarPacketPreparer {
           Placeholder.component("prefix", Sonar.get0().getConfig().getPrefix())))));
     }
 
+    // The captcha also has to be prepared if suspicious players can be sent to it
     if (Sonar.get0().getConfig().getVerification().getMap().getTiming() != SonarConfiguration.Verification.Timing.NEVER
-      || Sonar.get0().getConfig().getVerification().getGravity().isCaptchaOnFail()) {
+      || Sonar.get0().getConfig().getVerification().getGravity().isCaptchaOnFail()
+      || Sonar.get0().getConfig().getVerification().getRiskScore().isEnabled()) {
       enterCodeMessage = new SonarPacketSnapshot(new SystemChatPacket(new ComponentHolder(
         MiniMessage.miniMessage().deserialize(
           Sonar.get0().getConfig().getMessagesConfig().getString("verification.captcha.enter"),

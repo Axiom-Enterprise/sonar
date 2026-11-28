@@ -23,6 +23,7 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.RiskSignal;
 import xyz.jonesdev.sonar.api.antibot.SonarUser;
 import xyz.jonesdev.sonar.api.antibot.protocol.ProtocolVersion;
 import xyz.jonesdev.sonar.api.event.impl.UserVerifyJoinEvent;
@@ -40,6 +41,8 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 import xyz.jonesdev.sonar.common.verification.LoginHandler;
 
 import java.net.InetAddress;
+import java.util.EnumSet;
+import java.util.Set;
 
 import static xyz.jonesdev.sonar.api.antibot.ChannelPipelines.*;
 
@@ -53,6 +56,7 @@ public final class UserWrapper implements SonarUser {
   private final @Nullable String hostname;
   private final SystemTimer loginTimer;
   private boolean forceCaptcha;
+  private final Set<RiskSignal> riskSignals;
 
   public UserWrapper(final @NotNull ChannelHandlerContext ctx,
                      final @NotNull InetAddress inetAddress,
@@ -60,7 +64,8 @@ public final class UserWrapper implements SonarUser {
                      final @NotNull String username,
                      final @NotNull String fingerprint,
                      final boolean geyser,
-                     final @Nullable String hostname) {
+                     final @Nullable String hostname,
+                     final @NotNull Set<RiskSignal> riskSignals) {
     this.channel = ctx.channel();
     this.inetAddress = inetAddress;
     this.protocolVersion = protocolVersion;
@@ -69,6 +74,7 @@ public final class UserWrapper implements SonarUser {
     this.geyser = geyser;
     this.hostname = hostname;
     this.loginTimer = new SystemTimer();
+    this.riskSignals = riskSignals.isEmpty() ? EnumSet.noneOf(RiskSignal.class) : EnumSet.copyOf(riskSignals);
 
     GlobalSonarStatistics.totalAttemptedVerifications.incrementAndGet();
 
@@ -100,6 +106,14 @@ public final class UserWrapper implements SonarUser {
 
       // Mark the player as connected by caching them in a map of verifying players
       Sonar.get0().getAntiBot().getConnected().compute(inetAddress, (__, v) -> true);
+
+      // Count the player for the subnet limit; the inbound handler removes them once the channel closes
+      final String subnetKey = Sonar.get0().getAntiBot().getSubnetKey(inetAddress);
+      Sonar.get0().getAntiBot().addVerifyingSubnet(subnetKey);
+      final InboundHandler inboundHandler = channel.pipeline().get(InboundHandler.class);
+      if (inboundHandler != null) {
+        inboundHandler.setVerifyingSubnet(subnetKey);
+      }
 
       // Replace normal encoder to allow custom packets
       final SonarPacketEncoder newEncoder = new SonarPacketEncoder(protocolVersion);
@@ -182,5 +196,15 @@ public final class UserWrapper implements SonarUser {
 
   public void setForceCaptcha(final boolean forceCaptcha) {
     this.forceCaptcha = forceCaptcha;
+  }
+
+  @Override
+  public void flagRisk(final @NotNull RiskSignal signal) {
+    riskSignals.add(signal);
+  }
+
+  @Override
+  public @NotNull Set<RiskSignal> getRiskSignals() {
+    return riskSignals;
   }
 }

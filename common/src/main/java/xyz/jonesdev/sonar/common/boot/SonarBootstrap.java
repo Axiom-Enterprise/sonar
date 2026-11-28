@@ -28,6 +28,7 @@ import xyz.jonesdev.sonar.api.SonarPlatform;
 import xyz.jonesdev.sonar.api.SonarSupplier;
 import xyz.jonesdev.sonar.api.command.subcommand.SubcommandRegistry;
 import xyz.jonesdev.sonar.api.config.SonarConfiguration;
+import xyz.jonesdev.sonar.api.database.controller.AttackHistoryController;
 import xyz.jonesdev.sonar.api.database.controller.BlacklistController;
 import xyz.jonesdev.sonar.api.database.controller.VerifiedPlayerController;
 import xyz.jonesdev.sonar.api.notification.ActionBarNotificationHandler;
@@ -38,6 +39,7 @@ import xyz.jonesdev.sonar.common.metrics.SonarMetricsServer;
 import xyz.jonesdev.sonar.common.protocol.SonarPacketPreparer;
 import xyz.jonesdev.sonar.common.ratelimit.CaffeineCacheRatelimiter;
 import xyz.jonesdev.sonar.common.ratelimit.NoopCacheRatelimiter;
+import xyz.jonesdev.sonar.common.service.DatacenterListService;
 import xyz.jonesdev.sonar.common.service.ScheduledServiceManager;
 import xyz.jonesdev.sonar.common.statistics.GlobalSonarStatistics;
 import xyz.jonesdev.sonar.common.subcommand.*;
@@ -45,6 +47,7 @@ import xyz.jonesdev.sonar.common.util.ProtocolUtil;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Collections;
 
 public abstract class SonarBootstrap<T> implements Sonar {
   private T plugin;
@@ -53,6 +56,7 @@ public abstract class SonarBootstrap<T> implements Sonar {
   private SonarConfiguration config;
   private VerifiedPlayerController verifiedPlayerController;
   private BlacklistController blacklistController;
+  private AttackHistoryController attackHistoryController;
   private final LibraryManager libraryManager;
   private final SonarStatistics statistics;
   private final SonarPlatform platform;
@@ -96,7 +100,8 @@ public abstract class SonarBootstrap<T> implements Sonar {
       new DumpCommand(),
       new NotifyCommand(),
       new LockdownCommand(),
-      new AllowlistCommand());
+      new AllowlistCommand(),
+      new HistoryCommand());
     // Hide unnecessary debug information
     Logger.setGlobalLogLevel(Level.WARNING);
   }
@@ -195,9 +200,12 @@ public abstract class SonarBootstrap<T> implements Sonar {
       .maximumSize(100_000L)
       .build());
 
-    // Stop the blacklist controller before its database connection is closed
+    // Stop the blacklist and attack history controllers before their database connection is closed
     if (blacklistController != null) {
       blacklistController.close();
+    }
+    if (attackHistoryController != null) {
+      attackHistoryController.close();
     }
 
     // Reinitialize database controller
@@ -212,6 +220,14 @@ public abstract class SonarBootstrap<T> implements Sonar {
       ? verifiedPlayerController.getConnectionSource() : null);
     blacklistController.load(getAntiBot().getBlacklist(), blacklistTime);
 
+    // Reinitialize the attack history (shares the connection of the verified players)
+    attackHistoryController = new AttackHistoryController(verifiedPlayerController.getConnectionSource(),
+      getConfig().getAttackHistoryMaxEntries(),
+      attackHistoryController == null ? Collections.emptyList() : attackHistoryController.getRecords());
+
+    // Load the datacenter and VPN networks in the background
+    DatacenterListService.apply();
+
     // Start, restart or stop the metrics endpoint
     metricsServer.apply(getConfig().getMetrics());
   }
@@ -223,9 +239,14 @@ public abstract class SonarBootstrap<T> implements Sonar {
     ScheduledServiceManager.stop();
     // Stop the metrics endpoint
     metricsServer.stop();
-    // Stop the blacklist controller before closing the database connection
+    // Stop downloading datacenter lists
+    DatacenterListService.stop();
+    // Stop the blacklist and attack history controllers before closing the database connection
     if (blacklistController != null) {
       blacklistController.close();
+    }
+    if (attackHistoryController != null) {
+      attackHistoryController.close();
     }
     // Close database connection if present
     if (verifiedPlayerController != null) {
@@ -261,6 +282,10 @@ public abstract class SonarBootstrap<T> implements Sonar {
 
   public BlacklistController getBlacklistController() {
     return this.blacklistController;
+  }
+
+  public AttackHistoryController getAttackHistoryController() {
+    return this.attackHistoryController;
   }
 
   public LibraryManager getLibraryManager() {

@@ -25,6 +25,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.antibot.RiskSignal;
 import xyz.jonesdev.sonar.api.antibot.subnet.SubnetRange;
 import xyz.jonesdev.sonar.api.command.SonarCommand;
 import xyz.jonesdev.sonar.api.database.ormlite.H2DatabaseTypeAdapter;
@@ -150,6 +151,9 @@ public final class SonarConfiguration {
     // Lockdown
     lockdownDefaultDuration = clamp(generalConfig.getInt("lockdown.default-duration"), 1, 10080);
 
+    // Attack history
+    attackHistoryMaxEntries = clamp(generalConfig.getInt("attack-history.max-entries"), 0, 10000);
+
     // Metrics
     metrics.enabled = generalConfig.getBoolean("metrics.enabled");
     metrics.host = generalConfig.getString("metrics.host");
@@ -168,6 +172,7 @@ public final class SonarConfiguration {
     database.type = Database.Type.valueOf(generalConfig.getString("database.type").toUpperCase());
     database.maximumAge = clamp(generalConfig.getInt("database.maximum-age"), 1, 365);
     database.persistBlacklist = generalConfig.getBoolean("database.persist-blacklist");
+    database.syncInterval = clamp(generalConfig.getInt("database.sync-interval"), 0, 3600);
 
     // Queue
     queue.maxQueuePolls = clamp(generalConfig.getInt("queue.max-polls"), 1, 1000);
@@ -227,6 +232,30 @@ public final class SonarConfiguration {
     verification.brand.enabled = generalConfig.getBoolean("verification.checks.client-brand.enabled");
     verification.brand.validRegex = Pattern.compile(generalConfig.getString("verification.checks.client-brand.valid-regex"));
     verification.brand.maxLength = generalConfig.getInt("verification.checks.client-brand.max-length");
+
+    verification.clientInformation.enabled = generalConfig.getBoolean("verification.checks.client-information.enabled");
+    verification.clientInformation.validLocaleRegex = Pattern.compile(
+      generalConfig.getString("verification.checks.client-information.valid-locale-regex"));
+
+    verification.datacenter.timing = Verification.Timing.valueOf(generalConfig.getString("verification.checks.datacenter.timing"));
+    verification.datacenter.files = trimmedList("verification.checks.datacenter.files");
+    verification.datacenter.urls = trimmedList("verification.checks.datacenter.urls");
+    verification.datacenter.refreshInterval = clamp(generalConfig.getInt("verification.checks.datacenter.refresh-interval"), 1, 720);
+
+    verification.subnetLimit.timing = Verification.Timing.valueOf(generalConfig.getString("verification.checks.subnet-limit.timing"));
+    verification.subnetLimit.maxVerifying = clamp(generalConfig.getInt("verification.checks.subnet-limit.max-verifying"), 0, 1000);
+    verification.subnetLimit.ipv4Prefix = clamp(generalConfig.getInt("verification.checks.subnet-limit.ipv4-prefix"), 8, 32);
+    verification.subnetLimit.ipv6Prefix = clamp(generalConfig.getInt("verification.checks.subnet-limit.ipv6-prefix"), 32, 128);
+
+    verification.latency.maxPing = clamp(generalConfig.getInt("verification.checks.latency.max-ping"), 0, 30000);
+    verification.latency.suspiciousPing = clamp(generalConfig.getInt("verification.checks.latency.suspicious-ping"), 0, 30000);
+
+    verification.riskScore.enabled = generalConfig.getBoolean("verification.risk-score.enabled");
+    verification.riskScore.threshold = clamp(generalConfig.getInt("verification.risk-score.threshold"), 1, 100);
+    for (final RiskSignal signal : RiskSignal.values()) {
+      verification.riskScore.weights.put(signal,
+        clamp(generalConfig.getInt("verification.risk-score.weights." + signal.getConfigKey()), 0, 100));
+    }
 
     verification.timeOfDay = clamp(generalConfig.getInt("verification.time-of-day"), 0, 24000);
     verification.gamemode = Verification.Gamemode.valueOf(generalConfig.getString("verification.gamemode"));
@@ -326,6 +355,8 @@ public final class SonarConfiguration {
     verification.invalidHostname = deserializeDisconnectMessage("verification.invalid-hostname");
     verification.namePatternBlocked = deserializeDisconnectMessage("verification.name-pattern-blocked");
     verification.lockdown = deserializeDisconnectMessage("verification.lockdown");
+    verification.datacenterBlocked = deserializeDisconnectMessage("verification.datacenter-blocked");
+    verification.subnetLimitReached = deserializeDisconnectMessage("verification.subnet-limit");
 
     verboseAnimation = Collections.unmodifiableList(messagesConfig.getStringList("verbose.animation"));
   }
@@ -333,6 +364,13 @@ public final class SonarConfiguration {
   /**
    * Parses all allowlist entries; invalid entries are skipped and reported in the console.
    */
+  private @NotNull List<String> trimmedList(final @NotNull String path) {
+    return Collections.unmodifiableList(generalConfig.getStringList(path).stream()
+      .map(String::trim)
+      .filter(entry -> !entry.isEmpty())
+      .collect(Collectors.toList()));
+  }
+
   private void loadAllowlist() {
     final List<SubnetRange> ranges = new ArrayList<>();
     for (final String raw : generalConfig.getStringList("general.allowlist")) {
@@ -452,6 +490,7 @@ public final class SonarConfiguration {
   private int serverListRateLimitMaxPings;
   private int serverListRateLimitWindow;
   private int lockdownDefaultDuration;
+  private int attackHistoryMaxEntries;
   private final Metrics metrics = new Metrics();
   private Component tooManyOnlinePerIp;
   private List<String> verboseAnimation;
@@ -519,6 +558,11 @@ public final class SonarConfiguration {
     private final ServerListPing serverListPing = new ServerListPing();
     private final Hostname hostname = new Hostname();
     private final NamePattern namePattern = new NamePattern();
+    private final ClientInformation clientInformation = new ClientInformation();
+    private final Datacenter datacenter = new Datacenter();
+    private final SubnetLimit subnetLimit = new SubnetLimit();
+    private final Latency latency = new Latency();
+    private final RiskScore riskScore = new RiskScore();
 
     public static final class Map {
       private Timing timing;
@@ -657,6 +701,99 @@ public final class SonarConfiguration {
       }
     }
 
+    public static final class ClientInformation {
+      private boolean enabled;
+      private Pattern validLocaleRegex;
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public Pattern getValidLocaleRegex() {
+        return this.validLocaleRegex;
+      }
+    }
+
+    public static final class Datacenter {
+      private Timing timing;
+      // Files inside the plugin folder and URLs; one IP address or CIDR range per line
+      private List<String> files = Collections.emptyList();
+      private List<String> urls = Collections.emptyList();
+      // Hours between two downloads of the URLs
+      private int refreshInterval;
+
+      public Timing getTiming() {
+        return this.timing;
+      }
+
+      public List<String> getFiles() {
+        return this.files;
+      }
+
+      public List<String> getUrls() {
+        return this.urls;
+      }
+
+      public int getRefreshInterval() {
+        return this.refreshInterval;
+      }
+    }
+
+    public static final class SubnetLimit {
+      private Timing timing;
+      private int maxVerifying;
+      private int ipv4Prefix;
+      private int ipv6Prefix;
+
+      public Timing getTiming() {
+        return this.timing;
+      }
+
+      public int getMaxVerifying() {
+        return this.maxVerifying;
+      }
+
+      public int getIpv4Prefix() {
+        return this.ipv4Prefix;
+      }
+
+      public int getIpv6Prefix() {
+        return this.ipv6Prefix;
+      }
+    }
+
+    public static final class Latency {
+      // Both values are in milliseconds; 0 disables them
+      private int maxPing;
+      private int suspiciousPing;
+
+      public int getMaxPing() {
+        return this.maxPing;
+      }
+
+      public int getSuspiciousPing() {
+        return this.suspiciousPing;
+      }
+    }
+
+    public static final class RiskScore {
+      private boolean enabled;
+      private int threshold;
+      private final java.util.Map<RiskSignal, Integer> weights = new EnumMap<>(RiskSignal.class);
+
+      public boolean isEnabled() {
+        return this.enabled;
+      }
+
+      public int getThreshold() {
+        return this.threshold;
+      }
+
+      public int getWeight(final @NotNull RiskSignal signal) {
+        return this.weights.getOrDefault(signal, 0);
+      }
+    }
+
     private Gamemode gamemode;
 
     public enum Gamemode {
@@ -713,6 +850,8 @@ public final class SonarConfiguration {
     private Component invalidHostname;
     private Component namePatternBlocked;
     private Component lockdown;
+    private Component datacenterBlocked;
+    private Component subnetLimitReached;
 
     public Timing getTiming() {
       return this.timing;
@@ -744,6 +883,26 @@ public final class SonarConfiguration {
 
     public NamePattern getNamePattern() {
       return this.namePattern;
+    }
+
+    public ClientInformation getClientInformation() {
+      return this.clientInformation;
+    }
+
+    public Datacenter getDatacenter() {
+      return this.datacenter;
+    }
+
+    public SubnetLimit getSubnetLimit() {
+      return this.subnetLimit;
+    }
+
+    public Latency getLatency() {
+      return this.latency;
+    }
+
+    public RiskScore getRiskScore() {
+      return this.riskScore;
     }
 
     public Gamemode getGamemode() {
@@ -874,6 +1033,14 @@ public final class SonarConfiguration {
       return this.lockdown;
     }
 
+    public Component getDatacenterBlocked() {
+      return this.datacenterBlocked;
+    }
+
+    public Component getSubnetLimitReached() {
+      return this.subnetLimitReached;
+    }
+
     private Verification() {
     }
   }
@@ -952,6 +1119,8 @@ public final class SonarConfiguration {
     private Type type;
     private int maximumAge;
     private boolean persistBlacklist;
+    // Seconds between two reads of the entries written by other proxies; 0 disables the synchronization
+    private int syncInterval;
 
     public Type getType() {
       return this.type;
@@ -963,6 +1132,10 @@ public final class SonarConfiguration {
 
     public boolean isPersistBlacklist() {
       return this.persistBlacklist;
+    }
+
+    public int getSyncInterval() {
+      return this.syncInterval;
     }
 
     private Database() {
@@ -1169,6 +1342,10 @@ public final class SonarConfiguration {
 
   public int getLockdownDefaultDuration() {
     return this.lockdownDefaultDuration;
+  }
+
+  public int getAttackHistoryMaxEntries() {
+    return this.attackHistoryMaxEntries;
   }
 
   public Metrics getMetrics() {

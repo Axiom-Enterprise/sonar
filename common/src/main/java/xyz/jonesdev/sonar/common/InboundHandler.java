@@ -31,6 +31,8 @@ import java.util.function.Consumer;
 public final class InboundHandler extends ChannelInboundHandlerAdapter {
   private final Consumer<ChannelPipeline> sonarPipelineInjector;
   private InetAddress inetAddress;
+  // Subnet the player is counted in while being verified (see the subnet limit)
+  private String verifyingSubnet;
 
   @Override
   public void channelActive(final @NotNull ChannelHandlerContext ctx) throws Exception {
@@ -48,6 +50,10 @@ public final class InboundHandler extends ChannelInboundHandlerAdapter {
     ctx.fireChannelInactive();
     // The player can disconnect without sending the login packet first
     // Account for this by checking if the inetAddress has been set yet
+    if (verifyingSubnet != null) {
+      Sonar.get0().getAntiBot().removeVerifyingSubnet(verifyingSubnet);
+      verifyingSubnet = null;
+    }
     if (inetAddress != null) {
       // Remove the IP address from the queue
       Sonar.get0().getAntiBot().getQueue().getPlayers().compute(inetAddress, (ignored, action) -> {
@@ -91,6 +97,10 @@ public final class InboundHandler extends ChannelInboundHandlerAdapter {
 
   public void setInetAddress(final InetAddress inetAddress) {
     this.inetAddress = inetAddress;
+  }
+
+  public void setVerifyingSubnet(final String verifyingSubnet) {
+    this.verifyingSubnet = verifyingSubnet;
   }
 
   public InetAddress getInetAddress() {

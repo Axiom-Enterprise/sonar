@@ -38,11 +38,14 @@ public final class ProtocolHandler extends VerificationHandler {
     super(user);
 
     // Immediately send the player the transaction packet
+    transactionSentAt = System.nanoTime();
     sendTransaction();
   }
 
   private boolean waitingSwingArm, waitingSlotConfirm, waitingTransaction;
   private short expectedTransactionId;
+  // Value of System.nanoTime() when the first transaction was sent, used for the latency check
+  private long transactionSentAt = -1L;
   private int currentClientSlotId, expectedSlotId = -1;
 
   @Override
@@ -60,6 +63,11 @@ public final class ProtocolHandler extends VerificationHandler {
       final long transactionId = transaction.getTransactionId();
       checkState(transactionId == expectedTransactionId,
         "expected T ID " + expectedTransactionId + ", but got " + transactionId);
+      // Only measure the first transaction since the client answers it without any delay
+      if (transactionSentAt != -1L) {
+        checkLatency(transactionSentAt);
+        transactionSentAt = -1L;
+      }
 
       // Only perform the SetHeldItem check on Java players since the Bedrock protocol breaks this check.
       // I don't really know why this doesn't work on Bedrock,
@@ -168,7 +176,7 @@ public final class ProtocolHandler extends VerificationHandler {
     if (!user.isGeyser()
       && AntiBot.shouldPerform(Sonar.get0().getConfig().getVerification().getVehicle().getTiming())) {
       user.channel().pipeline().get(SonarPacketDecoder.class).setListener(new VehicleHandler(user));
-    } else if (user.isForceCaptcha() || Sonar.get0().getAntiBot().shouldPerformCaptcha()) {
+    } else if (Sonar.get0().getAntiBot().shouldPerformCaptcha(user)) {
       user.channel().pipeline().get(SonarPacketDecoder.class).setListener(new CaptchaHandler(user));
     } else {
       // The player has passed all checks

@@ -26,12 +26,14 @@ import com.j256.ormlite.table.TableUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.jonesdev.sonar.api.Sonar;
+import xyz.jonesdev.sonar.api.config.SonarConfiguration;
 import xyz.jonesdev.sonar.api.database.model.BlacklistedAddress;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Keeps the in-memory blacklist in sync with the database, so blacklisted addresses survive restarts.
@@ -45,7 +47,8 @@ import java.util.concurrent.Executors;
  */
 public final class BlacklistController {
   private final @Nullable Dao<BlacklistedAddress, String> dao;
-  private final ExecutorService updateService = Executors.newSingleThreadExecutor();
+  private final ScheduledExecutorService updateService = Executors.newSingleThreadScheduledExecutor();
+  private long lastSync;
 
   /**
    * @param connectionSource The shared database connection or {@code null} if persistence is disabled
@@ -92,7 +95,32 @@ public final class BlacklistController {
       if (restored > 0) {
         Sonar.get0().getLogger().info("Restored {} blacklisted addresses from the database.", restored);
       }
+      lastSync = System.currentTimeMillis();
     });
+
+    // Read the entries blacklisted by other proxies that share the same database
+    // H2 is a local file that cannot be shared, so there is nothing to synchronize
+    final int syncInterval = Sonar.get0().getConfig().getDatabase().getSyncInterval();
+    if (dao != null && syncInterval > 0
+      && Sonar.get0().getConfig().getDatabase().getType() != SonarConfiguration.Database.Type.H2) {
+      updateService.scheduleWithFixedDelay(() -> execute(dao -> sync(dao, blacklist)),
+        syncInterval, syncInterval, TimeUnit.SECONDS);
+    }
+  }
+
+  /**
+   * Adds all entries that have been blacklisted since the last synchronization to the cache.
+   * Entries removed by other proxies stay in the cache until they expire.
+   */
+  private void sync(final @NotNull Dao<BlacklistedAddress, String> dao,
+                    final @NotNull Cache<String, Integer> blacklist) throws SQLException {
+    final long now = System.currentTimeMillis();
+    // Re-read a short time before the last synchronization, so slow writes of other proxies are not missed
+    final Timestamp since = new Timestamp(lastSync - TimeUnit.MINUTES.toMillis(1L));
+    for (final BlacklistedAddress entry : dao.queryBuilder().where().ge(BlacklistedAddress.TIMESTAMP_COLUMN, since).query()) {
+      blacklist.asMap().merge(entry.getAddress(), entry.getScore(), Math::max);
+    }
+    lastSync = now;
   }
 
   /**
